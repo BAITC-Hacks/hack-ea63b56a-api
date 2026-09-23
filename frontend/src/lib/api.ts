@@ -16,6 +16,16 @@ export type RecommendationRequest = {
   durationHours?: number;
 };
 
+export type IntentValues = Partial<RecommendationRequest>;
+
+export type IntentParseResponse = {
+  values: IntentValues;
+  assumptions: string[];
+  missing: (keyof RecommendationRequest)[];
+  confidence: number;
+  analysisMode: "ai" | "fallback";
+};
+
 export type RecommendationResponse = {
   status: "matched" | "no_category_in_city" | "no_candidates_after_filters";
   count: number;
@@ -82,4 +92,12 @@ export async function getRecommendations(input: RecommendationRequest): Promise<
       price_imputed: item.price_imputed ?? item.priceImputed ?? false,
     })),
   };
+}
+
+export async function parseIntent(message: string): Promise<IntentParseResponse> {
+  return readJson<IntentParseResponse>(await fetch(`${apiBase}/intake/parse`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ message }),
+  }));
 }
