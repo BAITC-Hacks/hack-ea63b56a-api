@@ -1,0 +1,14 @@
+.git
+**/node_modules
+**/.next
+**/dist
+**/coverage
+**/test-results
+**/playwright-report
+**/.cache
+**/.recommendation-cache
+**/.env
+**/.env.*
+!**/.env.example
+**/*.tsbuildinfo
+~$*.docx

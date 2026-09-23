@@ -1,78 +1,151 @@
-# HackAlem AI contractor recommender API
+# HackAlem AI #79-lite
 
-Сервис для хакатон-задачи #79-lite: умный подбор event-подрядчиков в Казахстане.
+Подбор event-подрядчиков в Казахстане: Next.js принимает параметры мероприятия, NestJS
+проверяет ограничения и использует OpenAI для смыслового ранжирования допустимых профилей.
+Результат: до трёх карточек с индивидуальными объяснениями. Бронирования и уведомлений нет.
 
-Задача сервиса — принять параметры заказа и вернуть до 3 карточек подрядчиков с конкретным
-объяснением, почему каждый подрядчик подходит. Ценность решения в качестве объяснений и честной
-обработке занятости, бюджета, формата, языка и пустых результатов.
+## Запуск локально
 
-## Исходные материалы
+Нужны Node.js 22 (от 22.12) и npm. Два терминала, команды из корня репозитория:
 
-| Файл | Назначение |
+```sh
+npm --prefix backend ci
+npm --prefix backend run start:dev
+```
+
+```sh
+npm --prefix frontend ci
+npm --prefix frontend run dev
+```
+
+Сайт: http://localhost:3000. API: http://localhost:3001/api/v1.
+Swagger: http://localhost:3001/api/docs. Health: http://localhost:3001/api/v1/health.
+Без API-ключа работает детерминированный подбор с объяснениями из исходных профилей;
+интерфейс явно показывает резервный режим.
+
+Для ИИ создайте `backend/.env` по `backend/.env.example` и задайте `OPENAI_API_KEY`.
+Файлы `.env` исключены из Git и Docker build context. Ключ не нужен frontend и не должен
+попадать в `NEXT_PUBLIC_*`. Промокредит в кабинете OpenAI не является API-ключом.
+После изменения env перезапустите приложение.
+
+| Backend env | Назначение / значение по умолчанию |
 |---|---|
-| `HackAlem AI_ Хакатон-задача_ умный подбор подрядчиков.docx` | ТЗ, критерии оценки и описание полей |
-| `hackathon dataset anonymized.csv` | Основной датасет: 66 профилей подрядчиков |
-| `hackathon dataset preview.html` | Человекочитаемый просмотр датасета |
+| `PORT` | `3001` |
+| `OPENAI_API_KEY` | Пусто: fallback; задан: реальный запрос к OpenAI |
+| `OPENAI_MODEL` | `gpt-4o-mini`; можно выбрать доступную аккаунту модель со Structured Outputs |
+| `OPENAI_TIMEOUT_MS` | `7000`, максимум 7 секунд, без повторных попыток |
+| `DATASET_PATH` | Исходный CSV в корне, путь относительно backend |
+| `CACHE_DIR` | `./cache`, сохраняемые результаты для повторяемого порядка |
+| `FRONTEND_ORIGIN` | `http://localhost:3000` для CORS |
 
-## Что известно о данных
+Frontend принимает только серверную `BACKEND_URL`, по умолчанию `http://localhost:3001`.
+Пример: `frontend/.env.example`. Браузер обращается к `/api/v1/*` своего домена;
+Next.js пересылает разрешённые запросы в NestJS.
 
-- 66 профилей, 13 колонок.
-- Города: Алматы — 50, Астана — 15, Зарубежье — 1.
-- Основные категории: Ведущий — 15, Фотограф — 12, Банкетные площадки — 8, редкие категории — по 3 профиля.
-- Категории в CSV могут быть составными через `|`, например `Банкетный зал|Загородная площадка|Ресторан`.
-- `busy_dates` содержит занятые даты в диапазоне `2026-09-23` — `2026-12-31`.
-- В декабре загрузка выше, это ожидаемое свойство датасета.
-- Есть флаги качества данных: `synthetic`, `city_imputed`, `price_imputed`.
+## Docker
 
-## Планируемый стек
+Docker Desktop должен быть запущен с Linux containers. Из корня:
 
-Пока кода и манифестов нет. Защитимый дефолт для этого репозитория — TypeScript/NestJS API:
-
-- `GET /health` для проверки запуска;
-- `POST /recommendations` для подбора подрядчиков;
-- загрузка CSV при старте приложения;
-- детерминированный scoring без обучения модели на 66 строках;
-- опциональный LLM/embeddings слой только для смыслового совпадения и текста объяснений, с fallback без API.
-
-## Ожидаемый вход
-
-```json
-{
-  "city": "Алматы",
-  "date": "2026-10-15",
-  "eventType": "корпоратив",
-  "category": "Ведущий",
-  "budgetKzt": 900000,
-  "durationHours": 5,
-  "language": "русский"
-}
+```sh
+docker compose config --quiet
+docker compose build
+docker compose up -d --wait
+node scripts/smoke.mjs
 ```
 
-## Ожидаемый выход
+Открыть http://localhost:3000. Swagger: http://localhost:3001/api/docs.
+`backend/.env` подключается при наличии; запуск без него поддерживается. Контейнер Next.js
+обращается к `http://backend:3001`, а исходный CSV копируется в backend-образ без изменения.
+Кэш хранится в named volume `recommendations`, поэтому переживает restart/rebuild.
+`docker compose down` останавливает сервисы и сохраняет кэш. Для других портов задайте
+`FRONTEND_PORT` и `BACKEND_PORT`; для smoke соответственно `FRONTEND_URL` и `API_URL`.
 
-```json
-{
-  "status": "matched",
-  "items": [
-    {
-      "id": "HK-00000",
-      "name": "Имя",
-      "category": "Ведущий",
-      "city": "Алматы",
-      "priceFromKzt": 500000,
-      "explanation": "Подходит под бюджет и свободен 15 октября. Берёт корпоративы на русском языке до 6 часов."
-    }
-  ]
-}
+## Демо
+
+Во frontend есть готовые сценарии. Те же запросы напрямую (curl для Bash; в PowerShell
+удобнее Swagger либо `Invoke-RestMethod` с JSON-телом):
+
+```sh
+# Плотная категория: три карточки
+curl -s http://localhost:3001/api/v1/recommendations -H 'Content-Type: application/json' -d '{"city":"Алматы","date":"2026-10-15","eventFormat":"корпоратив","category":"Ведущий","budgetKzt":900000,"language":"русский"}'
+
+# Редкая категория: один синтетический флорист, причина нехватки карточек
+curl -s http://localhost:3001/api/v1/recommendations -H 'Content-Type: application/json' -d '{"city":"Астана","date":"2026-11-14","eventFormat":"корпоратив","category":"Флорист","budgetKzt":900000,"language":"русский"}'
+
+# Кандидаты есть, но бюджет исключает всех
+curl -s http://localhost:3001/api/v1/recommendations -H 'Content-Type: application/json' -d '{"city":"Алматы","date":"2026-10-15","eventFormat":"корпоратив","category":"Ведущий","budgetKzt":1}'
+
+# Такой категории в городе нет
+curl -s http://localhost:3001/api/v1/recommendations -H 'Content-Type: application/json' -d '{"city":"Астана","date":"2026-11-14","eventFormat":"корпоратив","category":"Инструменталист","budgetKzt":900000}'
+
+# Та же плотная категория в декабре: занятость меняет выдачу
+curl -s http://localhost:3001/api/v1/recommendations -H 'Content-Type: application/json' -d '{"city":"Алматы","date":"2026-12-20","eventFormat":"корпоратив","category":"Ведущий","budgetKzt":900000,"language":"русский"}'
 ```
 
-Три пользовательских исхода должны быть различимы:
+Обязательные поля: `city`, `date`, `eventFormat`, `category`, `budgetKzt`.
+Опциональные: `durationHours` (больше 0, не больше 24), `language`.
+Цена в карточке всегда **от**, а не окончательная стоимость мероприятия.
+Календарь ограничен 23.09.2026–31.12.2026: вне окна API возвращает 400, поскольку
+отсутствие занятой даты вне датасета не доказывает доступность.
 
-- `matched` — есть подходящие подрядчики;
-- `no_category_in_city` — в городе нет такой категории;
-- `no_candidates_after_filters` — кандидаты есть, но заняты или не проходят условия.
+Ответ содержит `status`, `count`, `totalCandidates`, `eligibleCount`, `message`,
+`analysisMode`, `exclusions` и `items`. Три исхода: `matched`, `no_category_in_city`,
+`no_candidates_after_filters`. Они возвращаются с HTTP 200; некорректный запрос с 400.
+Количество исключений считается по каждой причине независимо: один профиль может нарушать
+несколько условий. Полный контракт: [docs/API-CONTRACT.md](docs/API-CONTRACT.md).
 
-## Следующий шаг
+## Архитектура и ИИ
 
-Создать NestJS-приложение в корне репозитория и перенести CSV в `data/`, затем реализовать
-детерминированный endpoint рекомендаций.
+```text
+Next.js form -> same-origin proxy -> NestJS DTO validation
+  -> CSV repository -> city/category/date/budget/format/language/duration filters
+  -> OpenAI Responses API + Zod Structured Outputs
+  -> validate IDs/scores/profile evidence -> stable score/price/ID sort -> top 3
+```
+
+ИИ получает только допустимых кандидатов и оценивает смысл описаний применительно к формату
+мероприятия. ID, имя, город, цена и флаги берутся из CSV. Ответ модели проверяется по Zod
+и исходным профилям. При отсутствии ключа, отказе, таймауте, ошибке или невалидном ответе
+применяется детерминированный fallback. `analysisMode` честно сообщает использованный режим.
+Документация интеграции: [OpenAI Structured Outputs](https://developers.openai.com/api/docs/guides/structured-outputs).
+
+Порядок повторных ответов фиксируется локальными JSON-снимками: ключ включает нормализованный
+запрос, хэш CSV, модель, версию промпта и наличие ИИ. Сохраняется первый ответ, в том числе
+fallback; одновременные одинаковые запросы объединяются. Это обеспечивает повторяемость
+после перезапуска без обещаний детерминизма самой LLM. Изменение данных/модели/версии или
+удаление кэша создаёт новый набор результатов. После временного сбоя уже сохранённый fallback
+остаётся для того же запроса. MVP рассчитан на один экземпляр backend; БД и Redis нет.
+
+Модули и библиотеки: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+Исходный CSV остаётся единственным источником профилей. DOCX и HTML preview сохранены в корне.
+Данные: 66 профилей, города 50/15/1; `synthetic=13`, `city_imputed=8`, `price_imputed=18`.
+В интерфейсе видны синтетические профили и восстановленные значения города/цены.
+`max_hours=null` означает неприменимость ограничения присутствия, а не неизвестный ноль.
+
+## Проверки
+
+```sh
+npm --prefix backend run lint
+npm --prefix backend test
+npm --prefix backend run build
+npm --prefix frontend run lint
+npm --prefix frontend test
+npm --prefix frontend run build
+node scripts/smoke.mjs
+```
+
+Smoke требует запущенные оба приложения и проверяет API, frontend proxy, повтор запроса,
+плотную/редкую/пустую категории, смену даты, флаги и валидацию. Unit/e2e-тесты backend
+проверяют ИИ через подмену SDK; это не подтверждает доступность модели или баланс аккаунта.
+Живую интеграцию с OpenAI проверяют с собственным ключом и `analysisMode=ai` в ответе.
+
+Браузерная проверка всей связки без подмены API (при запущенных приложениях):
+
+```sh
+npm --prefix frontend exec -- playwright install chromium
+node scripts/browser-smoke.mjs
+```
+
+Она проверяет сценарии на ширинах 1440, 390 и 320 px и сохраняет снимки в игнорируемую
+папку `frontend/test-results`. Отдельный `npm --prefix frontend run test:e2e` проверяет
+интерфейс с фиксированным ответом API.

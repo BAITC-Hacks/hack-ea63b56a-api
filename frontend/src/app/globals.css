@@ -1,0 +1,11 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root { color-scheme: light; }
+html { scroll-behavior: smooth; }
+body { color: #202c2d; background: #f7f9f7; font-family: "Segoe UI", Arial, sans-serif; }
+::selection { background: #b9e6df; color: #163a38; }
+@layer base {
+  :focus-visible { outline: 3px solid #0d766f; outline-offset: 3px; }
+}

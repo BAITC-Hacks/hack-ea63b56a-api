@@ -6,3 +6,11 @@ dist/
 .env
 .env.*
 !.env.example
+.next/
+coverage/
+playwright-report/
+test-results/
+*.tsbuildinfo
+.cache/
+.recommendation-cache/
+backend/cache/

@@ -1,4 +1,4 @@
-# HackAlem AI contractor recommender API
+# HackAlem AI contractor recommender
 
 Проект: API для хакатон-задачи #79-lite «умный подбор подрядчиков». Сервис принимает параметры
 event-заказа и возвращает до 3 карточек подрядчиков с конкретным объяснением по бюджету,
@@ -15,15 +15,23 @@ plugins, ChatGPT, Codex или их документацией.
 
 ## Стек
 
-Кода пока нет. Дефолт для первой реализации: TypeScript/NestJS API.
+Монорепозиторий разделён на `backend/` (NestJS) и `frontend/` (Next.js). Полное решение по
+библиотекам, модулям и потоку данных зафиксировано в `docs/ARCHITECTURE.md`.
 
-НЕ ПРОВЕРЕНО (в репозитории пока нет приложения) — перепроверить после scaffold:
+Backend использует официальный пакет `openai`, Responses API и Structured Outputs. API-ключ
+может находиться только в backend-переменной `OPENAI_API_KEY` и никогда не передаётся клиенту.
+
+Приложения развёрнуты. Из корня репозитория:
 
 ```sh
-npm install
-npm run lint
-npm run test
-npm run build
+npm --prefix backend ci
+npm --prefix backend run lint
+npm --prefix backend test
+npm --prefix backend run build
+npm --prefix frontend ci
+npm --prefix frontend run lint
+npm --prefix frontend test
+npm --prefix frontend run build
 ```
 
 ## Инварианты задачи
@@ -62,5 +70,8 @@ npm run build
 
 ## Дальше
 
-Следующий конкретный шаг: создать NestJS-приложение в корне, перенести CSV в `data/`, реализовать
-`POST /recommendations` и зафиксировать реальные команды в этом файле.
+CSV читается из корня (Docker копирует его в `/data/contractors.csv`), оригиналы не изменять.
+Контракт: `docs/API-CONTRACT.md`. Запуск: `docker compose up -d --build --wait`.
+Smoke: `node scripts/smoke.mjs`; браузер: `node scripts/browser-smoke.mjs`.
+При изменении фильтров, scoring, объяснений или схемы ответа обновлять `pipelineVersion` в
+`recommendations.service.ts`; при изменении AI-промпта обновлять `PROMPT_VERSION`.
