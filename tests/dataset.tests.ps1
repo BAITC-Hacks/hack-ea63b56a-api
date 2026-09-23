@@ -12,6 +12,17 @@ function Assert-True([bool]$Condition, [string]$Message) {
 }
 
 $tests = [ordered]@{
+    'Dense demo calendars change availability between autumn and December' = {
+        $hosts = @($rows | Where-Object {
+            $_.city -eq 'Алматы' -and ($_.categories.Split('|') -contains 'Ведущий')
+        })
+        Assert-True ($hosts.Count -eq 10) "Expected 10 Almaty hosts, got $($hosts.Count)"
+        # Calendar availability only: budget, format and language narrow these sets further.
+        $autumn = @($hosts | Where-Object { $_.busy_dates.Split('|') -notcontains '2026-10-15' })
+        $winter = @($hosts | Where-Object { $_.busy_dates.Split('|') -notcontains '2026-12-20' })
+        Assert-True ($autumn.Count -eq 8) "Expected 8 hosts free on October 15, got $($autumn.Count)"
+        Assert-True ($winter.Count -eq 2) "Expected 2 hosts free on December 20, got $($winter.Count)"
+    }
     'Matching fields contain no empty pipe-separated values' = {
         Assert-True ($rows.Count -gt 0) 'Dataset is empty'
         foreach ($row in $rows) {
