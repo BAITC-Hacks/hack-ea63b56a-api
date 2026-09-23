@@ -61,6 +61,17 @@ node scripts/smoke.mjs
 `docker compose down` останавливает сервисы и сохраняет кэш. Для других портов задайте
 `FRONTEND_PORT` и `BACKEND_PORT`; для smoke соответственно `FRONTEND_URL` и `API_URL`.
 
+### Telegram-бот
+
+Python-бот находится в `bot/` и использует те же endpoints backend. Создайте `bot/.env`
+по примеру `bot/.env.example`, укажите токен от `@BotFather` и запустите:
+
+```sh
+docker compose --profile bot up -d --build --wait bot
+```
+
+Подробная короткая инструкция: [bot/README.md](bot/README.md).
+
 ## Демо
 
 Во frontend есть готовые сценарии. Те же запросы напрямую (curl для Bash; в PowerShell

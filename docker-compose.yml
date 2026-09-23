@@ -48,5 +48,20 @@ services:
       start_period: 15s
     restart: unless-stopped
 
+  bot:
+    profiles: ["bot"]
+    build:
+      context: bot
+      dockerfile: Dockerfile
+    env_file:
+      - path: bot/.env
+        required: false
+    environment:
+      BACKEND_URL: http://backend:3001/api/v1
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
+
 volumes:
   recommendations:
