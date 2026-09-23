@@ -1,1 +1,8 @@
 .DS_Store
+~$*.docx
+*.tmp
+node_modules/
+dist/
+.env
+.env.*
+!.env.example
