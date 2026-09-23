@@ -12,7 +12,7 @@ function TabsList({ className, ...props }: React.ComponentProps<typeof TabsPrimi
   return (
     <TabsPrimitive.List
       data-slot="tabs-list"
-      className={cn("grid h-10 w-full grid-cols-2 rounded-lg bg-muted p-1 text-muted-foreground", className)}
+      className={cn("grid h-10 w-full grid-cols-[0.8fr_1.2fr] rounded-lg border border-border bg-secondary/70 p-1 text-secondary-foreground", className)}
       {...props}
     />
   )
@@ -23,7 +23,7 @@ function TabsTrigger({ className, ...props }: React.ComponentProps<typeof TabsPr
     <TabsPrimitive.Trigger
       data-slot="tabs-trigger"
       className={cn(
-        "inline-flex min-w-0 items-center justify-center gap-2 rounded-md px-2 text-sm font-semibold outline-none transition-colors focus-visible:ring-[3px] focus-visible:ring-ring/30 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm [&_svg]:h-4 [&_svg]:w-4 [&_svg]:shrink-0",
+        "inline-flex min-w-0 items-center justify-center gap-1.5 rounded-md px-1.5 text-xs font-semibold text-secondary-foreground/75 outline-none transition-colors hover:text-secondary-foreground focus-visible:ring-[3px] focus-visible:ring-ring/30 disabled:cursor-not-allowed disabled:opacity-50 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm min-[380px]:gap-2 min-[380px]:px-2 min-[380px]:text-sm [&_svg]:h-4 [&_svg]:w-4 [&_svg]:shrink-0",
         className
       )}
       {...props}

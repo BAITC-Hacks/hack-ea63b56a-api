@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { getRecommendations } from "./api";
+import { getRecommendations, parseIntent } from "./api";
 
 afterEach(() => vi.unstubAllGlobals());
 
@@ -25,6 +25,31 @@ describe("recommendations API", () => {
     const result = await getRecommendations(input);
 
     expect(fetchMock).toHaveBeenCalledWith(expect.stringMatching(/\/api\/v1\/recommendations$/), expect.objectContaining({ method: "POST" }));
-    expect(result.items[0]).toMatchObject({ category: "Ведущий, Ведущий церемонии", city_imputed: true, price_imputed: false });
+    expect(result).toMatchObject({ exactCount: 1, alternativeCount: 0 });
+    expect(result.items[0]).toMatchObject({
+      category: "Ведущий, Ведущий церемонии", city_imputed: true, price_imputed: false,
+      matchType: "exact", alternative: false, availableDate: input.date, differences: [],
+    });
+  });
+});
+
+describe("intent API", () => {
+  it("posts only the natural-language message to the backend", async () => {
+    const parsed = {
+      values: { eventFormat: "свадьба", budgetKzt: 65000 },
+      assumptions: [],
+      missing: ["city", "date", "category"],
+      confidence: 0.91,
+      analysisMode: "ai",
+    };
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => parsed });
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(parseIntent("хочу свадьбу на 65000 тенге")).resolves.toEqual(parsed);
+    expect(fetchMock).toHaveBeenCalledWith(expect.stringMatching(/\/api\/v1\/intake\/parse$/), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ message: "хочу свадьбу на 65000 тенге" }),
+    });
   });
 });

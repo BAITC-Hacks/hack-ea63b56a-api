@@ -19,12 +19,23 @@ async function recommend(query, expectedStatus) {
   assert.equal(data.count, data.items.length);
   assert.ok(data.count <= 3);
   assert.ok(data.message.length > 15);
+  assert.equal(data.exactCount + data.alternativeCount, data.count);
   for (const card of data.items) {
-    assert.ok(card.priceFromKzt <= query.budgetKzt);
     assert.ok(card.explanation.length > 40);
     assert.equal(typeof card.synthetic, 'boolean');
     assert.equal(typeof card.city_imputed, 'boolean');
     assert.equal(typeof card.price_imputed, 'boolean');
+    assert.equal(card.city, query.city);
+    assert.equal(card.category, query.category);
+    if (card.matchType === 'exact') {
+      assert.ok(card.priceFromKzt <= query.budgetKzt);
+      assert.equal(card.availableDate, query.date);
+      assert.deepEqual(card.differences, []);
+    } else {
+      assert.equal(card.matchType, 'alternative');
+      assert.equal(card.alternative, true);
+      assert.ok(card.differences.length > 0);
+    }
   }
   console.log(JSON.stringify({ query, status: data.status, count: data.count, mode: data.analysisMode,
     milliseconds: Math.round(performance.now() - started), ids: data.items.map(item => item.id), message: data.message }));
@@ -37,6 +48,15 @@ assert.equal(health.contractors, 66);
 const catalog = await fetch(`${base}/catalog`).then(r => r.json());
 assert.ok(catalog.categories.includes('Ведущий'));
 assert.deepEqual(catalog.calendar, { from: '2026-09-23', to: '2026-12-31' });
+const intake = await fetch(`${base}/intake/parse`, { method: 'POST', headers: { 'content-type': 'application/json' },
+  body: JSON.stringify({ message: 'хочу свадьбу на 65000 тенге' }) }).then(r => r.json());
+assert.equal(intake.values.eventFormat, 'свадьба');
+assert.equal(intake.values.budgetKzt, 65000);
+assert.ok(intake.missing.includes('city'));
+const dataset = await fetch(`${base}/contractors?profileType=synthetic&limit=5`).then(r => r.json());
+assert.equal(dataset.total, 13);
+assert.equal(dataset.items.length, 5);
+assert.ok(dataset.items.every(item => item.profileType === 'synthetic'));
 const autumn = await recommend(dense, 'matched');
 assert.equal(autumn.count, 3);
 assert.equal(autumn.totalCandidates, 10);
@@ -51,6 +71,7 @@ await recommend({ ...dense, city: 'Астана', category: 'Инструмен�
 const winter = await recommend({ ...dense, date: '2026-12-20' }, 'no_candidates_after_filters');
 assert.equal(winter.exclusions.busy, 8);
 assert.notDeepEqual(winter.items.map(x => x.id), autumn.items.map(x => x.id));
+assert.ok(winter.items.every(item => item.matchType === 'alternative'));
 const badDate = await fetch(`${base}/recommendations`, { method: 'POST', headers: { 'content-type': 'application/json' },
   body: JSON.stringify({ ...dense, date: '2026-02-30' }) });
 assert.equal(badDate.status, 400);
@@ -60,4 +81,5 @@ assert.ok((await page.text()).includes('HackAlem'));
 const proxy = await fetch(`${frontend}/api/v1/health`);
 assert.equal(proxy.status, 200);
 assert.equal((await proxy.json()).contractors, 66);
-console.log('PASS: API, deterministic repeat, all outcomes, calendar, flags, validation, frontend and proxy.');
+assert.equal((await fetch(`${frontend}/dataset`)).status, 200);
+console.log('PASS: API, intent parsing, alternatives, deterministic repeat, dataset, validation, frontend and proxy.');

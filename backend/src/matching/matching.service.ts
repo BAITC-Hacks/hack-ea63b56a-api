@@ -34,6 +34,11 @@ function shiftDate(date: string, days: number): string {
   return new Date(Date.parse(`${date}T00:00:00.000Z`) + days * DAY_MS).toISOString().slice(0, 10);
 }
 
+function humanDate(date: string): string {
+  return new Intl.DateTimeFormat('ru-RU', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' })
+    .format(new Date(`${date}T00:00:00.000Z`));
+}
+
 @Injectable()
 export class MatchingService {
   match(all: Contractor[], request: RequestCriteria): MatchResult {
@@ -93,7 +98,7 @@ export class MatchingService {
       const days = Math.abs((Date.parse(`${availableDate}T00:00:00.000Z`) - Date.parse(`${request.date}T00:00:00.000Z`)) / DAY_MS);
       differences.push({
         field: 'date', requested: request.date, offered: availableDate,
-        message: `На ${request.date} исполнитель занят, ближайшая свободная дата — ${availableDate}.`,
+        message: `На ${humanDate(request.date)} исполнитель занят, ближайшая свободная дата — ${humanDate(availableDate)}.`,
       });
       penalty += days;
     }
@@ -105,7 +110,7 @@ export class MatchingService {
       if (ratio > MAX_BUDGET_OVERAGE_RATIO) return null;
       differences.push({
         field: 'budget', requested: request.budgetKzt, offered: contractor.priceFromKzt,
-        message: `Стартовая цена выше бюджета на ${overage} ₸.`,
+        message: `Стартовая цена выше бюджета на ${new Intl.NumberFormat('ru-RU').format(overage)} ₸.`,
       });
       penalty += ratio * 100;
     }
@@ -143,6 +148,8 @@ export class MatchingService {
     for (let distance = 1; distance <= maxDistance; distance++) {
       const later = shiftDate(requestedDate, distance);
       if (later <= CALENDAR_TO && !contractor.busyDates.has(later)) return later;
+    }
+    for (let distance = 1; distance <= maxDistance; distance++) {
       const earlier = shiftDate(requestedDate, -distance);
       if (earlier >= CALENDAR_FROM && !contractor.busyDates.has(earlier)) return earlier;
     }

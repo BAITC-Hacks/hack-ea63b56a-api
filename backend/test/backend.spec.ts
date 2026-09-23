@@ -127,10 +127,11 @@ describe('recommendations, snapshots and fallback', () => {
     expect(matched.totalCandidates).toBe(10);
     expect(matched.items.every((item) => !repo.contractors.find((c) => c.id === item.id)!.busyDates.has(dense.date))).toBe(true);
     for (const item of matched.items) {
-      expect(item.explanation).toContain(dense.date);
+      expect(item.explanation).toContain('15 октября 2026');
       expect(item.explanation).toContain('900');
       expect(item.explanation).toContain('корпоратив');
-      const quote = item.explanation.match(/В описании: «(.+)»/u)?.[1];
+      expect(item).toMatchObject({ matchType: 'exact', alternative: false, availableDate: dense.date, differences: [] });
+      const quote = item.explanation.match(/(?:описание профиля|формату): «(.+)»/u)?.[1];
       expect(repo.contractors.find((c) => c.id === item.id)!.description.replace(/\s+/g, ' ')).toContain(quote);
     }
     expect(new Set(matched.items.map((item) => item.explanation)).size).toBe(matched.count);
@@ -143,9 +144,42 @@ describe('recommendations, snapshots and fallback', () => {
     const absent = await recommendations.recommend(dto({ ...dense, city: 'Астана', category: 'Инструменталист' }));
     expect(absent.status).toBe('no_category_in_city');
     expect(absent.analysisMode).toBe('not_needed');
+    expect(absent.message).toContain('не стали подменять');
     const filtered = await recommendations.recommend(dto({ ...dense, budgetKzt: 1 }));
     expect(filtered.status).toBe('no_candidates_after_filters');
     expect(filtered.exclusions.budget).toBe(10);
+    expect(filtered.items).toEqual([]);
+    expect(filtered.message).toContain('не стали предлагать другой тип события');
+  });
+
+  it('keeps exact matches first and fills remaining cards with transparent alternatives', async () => {
+    const { recommendations, repo } = service();
+    const base = { ...repo.contractors[0], city: 'Алматы', categories: ['Ведущий'],
+      eventFormats: ['свадьба'], languages: ['русский'], maxHours: 8,
+      description: 'Проводит камерные свадебные церемонии и интерактивы для гостей.' };
+    repo.contractors.splice(0, repo.contractors.length,
+      { ...base, id: 'exact', name: 'Точный', priceFromKzt: 90_000, busyDates: new Set<string>() },
+      { ...base, id: 'next-day', name: 'На следующий день', priceFromKzt: 90_000,
+        busyDates: new Set<string>(['2026-11-14']) },
+      { ...base, id: 'plus-budget', name: 'Чуть дороже', priceFromKzt: 110_000, busyDates: new Set<string>() },
+      { ...base, id: 'wrong-event', name: 'Только корпоратив', priceFromKzt: 80_000,
+        eventFormats: ['корпоратив'], busyDates: new Set<string>() });
+
+    const result = await recommendations.recommend(dto({
+      ...dense, date: '2026-11-14', eventFormat: 'свадьба', budgetKzt: 100_000,
+    }));
+
+    expect(result.status).toBe('matched');
+    expect(result).toMatchObject({ count: 3, exactCount: 1, alternativeCount: 2 });
+    expect(result.items.map((item) => item.id)).toEqual(['exact', 'next-day', 'plus-budget']);
+    expect(result.items.map((item) => item.matchType)).toEqual(['exact', 'alternative', 'alternative']);
+    expect(result.items[1]).toMatchObject({ availableDate: '2026-11-15', alternative: true });
+    expect(result.items[1].differences).toEqual([expect.objectContaining({
+      field: 'date', requested: '2026-11-14', offered: '2026-11-15',
+    })]);
+    expect(result.items[2].differences).toEqual([expect.objectContaining({ field: 'budget', offered: 110_000 })]);
+    expect(result.items.every((item) => item.id !== 'wrong-event')).toBe(true);
+    expect(result.message).toContain('компромисс');
   });
 
   it('returns identical snapshots for repeat, restart and concurrent requests', async () => {
@@ -199,7 +233,7 @@ describe('recommendations, snapshots and fallback', () => {
     expect(december.exclusions.busy).toBe(8);
     expect(december.items.map((c) => c.id)).not.toEqual(october.items.map((c) => c.id));
     expect(december.message).toContain('8 заняты');
-    expect(december.message).toContain('2026-12-20');
+    expect(december.message).toContain('20 декабря 2026');
   });
 
   it('uses price then ID to resolve equal AI scores', async () => {

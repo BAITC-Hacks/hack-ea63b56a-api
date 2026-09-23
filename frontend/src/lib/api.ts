@@ -29,6 +29,8 @@ export type IntentParseResponse = {
 export type RecommendationResponse = {
   status: "matched" | "no_category_in_city" | "no_candidates_after_filters";
   count: number;
+  exactCount: number;
+  alternativeCount: number;
   totalCandidates: number;
   eligibleCount: number;
   message: string;
@@ -44,19 +46,36 @@ export type RecommendationResponse = {
     synthetic: boolean;
     city_imputed: boolean;
     price_imputed: boolean;
+    matchType: "exact" | "alternative";
+    alternative: boolean;
+    availableDate: string;
+    matchedFields: string[];
+    differences: {
+      field: "date" | "budget" | "language" | "duration";
+      requested: string | number;
+      offered: string | number;
+      message: string;
+    }[];
   }[];
 };
 
-type RecommendationWireItem = Omit<RecommendationResponse["items"][number], "category" | "city_imputed" | "price_imputed"> & {
+type RecommendationWireItem = Omit<RecommendationResponse["items"][number], "category" | "city_imputed" | "price_imputed" | "matchType" | "alternative" | "availableDate" | "matchedFields" | "differences"> & {
   category?: string;
   categories?: string[] | string;
   city_imputed?: boolean;
   price_imputed?: boolean;
   cityImputed?: boolean;
   priceImputed?: boolean;
+  matchType?: "exact" | "alternative";
+  alternative?: boolean;
+  availableDate?: string;
+  matchedFields?: string[];
+  differences?: RecommendationResponse["items"][number]["differences"];
 };
 
-type RecommendationWireResponse = Omit<RecommendationResponse, "items"> & {
+type RecommendationWireResponse = Omit<RecommendationResponse, "items" | "exactCount" | "alternativeCount"> & {
+  exactCount?: number;
+  alternativeCount?: number;
   items: RecommendationWireItem[];
 };
 
@@ -83,14 +102,25 @@ export async function getRecommendations(input: RecommendationRequest): Promise<
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(input),
   }));
-  return {
-    ...response,
-    items: response.items.map((item) => ({
+  const items = response.items.map((item) => {
+    const matchType = item.matchType ?? (item.alternative ? "alternative" : "exact");
+    return {
       ...item,
       category: item.category ?? (Array.isArray(item.categories) ? item.categories.join(", ") : item.categories ?? input.category),
       city_imputed: item.city_imputed ?? item.cityImputed ?? false,
       price_imputed: item.price_imputed ?? item.priceImputed ?? false,
-    })),
+      matchType,
+      alternative: item.alternative ?? matchType === "alternative",
+      availableDate: item.availableDate ?? input.date,
+      matchedFields: item.matchedFields ?? [],
+      differences: item.differences ?? [],
+    };
+  });
+  return {
+    ...response,
+    exactCount: response.exactCount ?? items.filter((item) => item.matchType === "exact").length,
+    alternativeCount: response.alternativeCount ?? items.filter((item) => item.matchType === "alternative").length,
+    items,
   };
 }
 

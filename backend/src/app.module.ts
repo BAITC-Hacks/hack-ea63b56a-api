@@ -6,6 +6,7 @@ import { ContractorsModule } from './contractors/contractors.module';
 import { HealthModule } from './health/health.module';
 import { RuntimeConfigModule } from './config/runtime-config.module';
 import { RecommendationsModule } from './recommendations/recommendations.module';
+import { IntakeModule } from './intake/intake.module';
 
 @Module({
   imports: [
@@ -16,7 +17,7 @@ import { RecommendationsModule } from './recommendations/recommendations.module'
       redact: ['req.headers.authorization', 'req.headers.cookie', 'req.headers["x-api-key"]'],
     } }),
     ThrottlerModule.forRoot([{ ttl: 60_000, limit: 60 }]),
-    ContractorsModule, RecommendationsModule, HealthModule,
+    ContractorsModule, RecommendationsModule, IntakeModule, HealthModule,
   ],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
 })

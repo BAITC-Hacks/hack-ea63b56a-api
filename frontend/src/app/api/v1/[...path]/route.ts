@@ -7,15 +7,23 @@ type Context = { params: Promise<{ path: string[] }> };
 async function proxy(request: NextRequest, context: Context) {
   const { path } = await context.params;
   const endpoint = path.join("/");
-  if (!["catalog", "recommendations", "health"].includes(endpoint)) {
+  const methods: Record<string, "GET" | "POST"> = {
+    catalog: "GET",
+    contractors: "GET",
+    health: "GET",
+    "intake/parse": "POST",
+    recommendations: "POST",
+  };
+  if (!methods[endpoint]) {
     return NextResponse.json({ message: "Маршрут не найден" }, { status: 404 });
   }
-  if ((endpoint === "recommendations" && request.method !== "POST") || (endpoint !== "recommendations" && request.method !== "GET")) {
+  if (request.method !== methods[endpoint]) {
     return NextResponse.json({ message: "Метод не поддерживается" }, { status: 405 });
   }
   try {
     const base = process.env.BACKEND_URL || "http://localhost:3001";
     const target = new URL(`/api/v1/${endpoint}`, base);
+    request.nextUrl.searchParams.forEach((value, key) => target.searchParams.set(key, value));
     const response = await fetch(target, {
       method: request.method,
       headers: request.method === "POST" ? { "Content-Type": "application/json" } : undefined,

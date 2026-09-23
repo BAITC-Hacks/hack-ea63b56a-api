@@ -28,4 +28,40 @@ export class ContractorsService {
       calendar: { from: CALENDAR_FROM, to: CALENDAR_TO },
     };
   }
+
+  findPage(input: {
+    city?: string;
+    category?: string;
+    profileType?: 'real' | 'synthetic';
+    search?: string;
+    page: number;
+    limit: number;
+  }): { items: Contractor[]; total: number; page: number; limit: number; totalPages: number } {
+    const search = input.search ? normalize(input.search) : undefined;
+    const filtered = this.contractors.filter((contractor) => {
+      if (input.city && normalize(contractor.city) !== normalize(input.city)) return false;
+      if (input.category && !contractor.categories.some((category) => normalize(category) === normalize(input.category!))) return false;
+      if (input.profileType === 'synthetic' && !contractor.synthetic) return false;
+      if (input.profileType === 'real' && contractor.synthetic) return false;
+      if (!search) return true;
+      return [
+        contractor.id,
+        contractor.name,
+        contractor.city,
+        contractor.description,
+        ...contractor.categories,
+        ...contractor.eventFormats,
+        ...contractor.languages,
+      ].some((value) => normalize(value).includes(search));
+    });
+    const totalPages = Math.max(1, Math.ceil(filtered.length / input.limit));
+    const offset = (input.page - 1) * input.limit;
+    return {
+      items: filtered.slice(offset, offset + input.limit),
+      total: filtered.length,
+      page: input.page,
+      limit: input.limit,
+      totalPages,
+    };
+  }
 }

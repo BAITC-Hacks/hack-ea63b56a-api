@@ -42,6 +42,14 @@ export class ExclusionsDto {
   @ApiProperty() duration!: number;
 }
 
+export class MatchDifferenceDto {
+  @ApiProperty({ enum: ['date', 'budget', 'language', 'duration'] })
+  field!: 'date' | 'budget' | 'language' | 'duration';
+  @ApiProperty({ oneOf: [{ type: 'string' }, { type: 'number' }] }) requested!: string | number;
+  @ApiProperty({ oneOf: [{ type: 'string' }, { type: 'number' }] }) offered!: string | number;
+  @ApiProperty() message!: string;
+}
+
 export class RecommendationItemDto {
   @ApiProperty() id!: string;
   @ApiProperty() name!: string;
@@ -52,11 +60,19 @@ export class RecommendationItemDto {
   @ApiProperty() synthetic!: boolean;
   @ApiProperty() city_imputed!: boolean;
   @ApiProperty() price_imputed!: boolean;
+  @ApiProperty({ enum: ['exact', 'alternative'] }) matchType!: 'exact' | 'alternative';
+  @ApiProperty() alternative!: boolean;
+  @ApiProperty({ description: 'Date on which this card is available' }) availableDate!: string;
+  @ApiProperty({ type: [String], enum: ['city', 'category', 'eventFormat', 'date', 'budget', 'language', 'duration'] })
+  matchedFields!: string[];
+  @ApiProperty({ type: [MatchDifferenceDto] }) differences!: MatchDifferenceDto[];
 }
 
 export class RecommendationResponseDto {
   @ApiProperty({ enum: RecommendationStatus }) status!: RecommendationStatus;
   @ApiProperty() count!: number;
+  @ApiProperty() exactCount!: number;
+  @ApiProperty() alternativeCount!: number;
   @ApiProperty() totalCandidates!: number;
   @ApiProperty() eligibleCount!: number;
   @ApiProperty() message!: string;

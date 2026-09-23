@@ -72,7 +72,7 @@ export function IntentAssistant({ disabled, onApply }: IntentAssistantProps) {
         <AlertDescription>{intent.error.message}</AlertDescription>
       </Alert>}
 
-      {intent.isSuccess && <Alert className="border-[#b8dfd3] bg-[#eef8f4] text-[#215f50]">
+      {intent.isSuccess && <Alert className="border-primary/20 bg-accent text-accent-foreground">
         <Sparkles />
         <AlertTitle>{updated.length ? "Форма обновлена" : "Нужны дополнительные детали"}</AlertTitle>
         <AlertDescription className="space-y-2 text-current/85">

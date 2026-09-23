@@ -30,9 +30,10 @@ try {
 
     await page.getByLabel('Дата мероприятия').fill('2026-12-20');
     await page.getByRole('button', { name: 'Найти подрядчиков' }).click();
-    await page.getByRole('heading', { name: 'Кандидаты есть, но условия не подошли' }).waitFor();
+    await page.getByRole('heading', { name: 'Близкие варианты с компромиссом' }).waitFor();
     assert.ok((await results.textContent()).includes('заняты'));
-    assert.equal(await results.locator('li').count(), 0);
+    assert.ok(await results.getByText('Близкая альтернатива', { exact: true }).count() > 0);
+    assert.ok(await results.getByText('Что отличается от запроса', { exact: true }).count() > 0);
 
     await page.getByRole('button', { name: /Корпоратив · флорист/ }).click();
     await page.getByRole('heading', { name: 'Подходящие подрядчики' }).waitFor();
@@ -48,8 +49,21 @@ try {
     await page.getByLabel('Бюджет,').fill('0');
     await page.getByRole('button', { name: 'Найти подрядчиков' }).click();
     await page.getByText('Бюджет должен быть больше нуля', { exact: true }).waitFor();
+
+    await page.getByRole('tab', { name: /Чат/ }).click();
+    await page.getByLabel('Описание события').fill('хочу свадьбу на 65000 тенге');
+    await page.getByRole('button', { name: 'Заполнить форму' }).click();
+    await page.getByText('Форма обновлена', { exact: true }).waitFor();
+    assert.equal(await page.getByLabel('Бюджет, ₸ *').inputValue(), '65000');
+
+    await page.getByRole('link', { name: 'Датасет' }).click();
+    await page.getByRole('heading', { name: 'Датасет подрядчиков' }).waitFor();
+    const provenance = page.locator('[data-slot="badge"]:visible').filter({ hasText: /Настоящий профиль|Синтетический профиль/ });
+    await provenance.first().waitFor();
+    assert.ok(await provenance.count() > 0);
     assert.deepEqual(errors, [], `browser errors at ${width}px`);
-    console.log(`PASS ${width}px: dense/repeat/date/rare/absent/filtered/validation; no overflow or page errors.`);
+    assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false, `dataset overflow at ${width}px`);
+    console.log(`PASS ${width}px: chat, recommendations, alternatives, dataset and validation; no overflow or page errors.`);
     await page.close();
   }
 } finally {

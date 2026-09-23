@@ -8,7 +8,8 @@ import { RecommendationResponseDto } from './recommendation.dto';
 
 const SnapshotSchema = z.object({
   status: z.enum(['matched', 'no_category_in_city', 'no_candidates_after_filters']),
-  count: z.number().int().min(0).max(3), totalCandidates: z.number().int().nonnegative(),
+  count: z.number().int().min(0).max(3), exactCount: z.number().int().min(0).max(3),
+  alternativeCount: z.number().int().min(0).max(3), totalCandidates: z.number().int().nonnegative(),
   eligibleCount: z.number().int().nonnegative(), message: z.string().min(1),
   analysisMode: z.enum(['ai', 'fallback', 'not_needed']),
   exclusions: z.object({
@@ -20,8 +21,18 @@ const SnapshotSchema = z.object({
     id: z.string(), name: z.string(), category: z.string(), city: z.string(),
     priceFromKzt: z.number().int().positive(), explanation: z.string().min(1),
     synthetic: z.boolean(), city_imputed: z.boolean(), price_imputed: z.boolean(),
+    matchType: z.enum(['exact', 'alternative']), alternative: z.boolean(),
+    availableDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+    matchedFields: z.array(z.enum(['city', 'category', 'eventFormat', 'date', 'budget', 'language', 'duration'])),
+    differences: z.array(z.object({
+      field: z.enum(['date', 'budget', 'language', 'duration']),
+      requested: z.union([z.string(), z.number()]),
+      offered: z.union([z.string(), z.number()]),
+      message: z.string().min(1),
+    }).strict()),
   }).strict()).max(3),
-}).strict().refine((value) => value.count === value.items.length);
+}).strict().refine((value) => value.count === value.items.length &&
+  value.count === value.exactCount + value.alternativeCount);
 
 @Injectable()
 export class SnapshotService implements OnModuleInit {

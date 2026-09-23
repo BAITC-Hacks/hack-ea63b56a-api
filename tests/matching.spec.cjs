@@ -46,3 +46,40 @@ describe('Budget and language must match the same contractor', () => {
     expect(matching.match([affordable, russianSpeaking, suitable], criteria).eligible).toEqual([suitable]);
   });
 });
+
+describe('Closest alternatives', () => {
+  const matching = new MatchingService();
+  const wedding = { ...criteria, date: '2026-11-14', eventFormat: 'свадьба', budgetKzt: 100000 };
+
+  it('prefers the nearest free date and never changes the event format', () => {
+    const exact = contractor({ id: 'exact', eventFormats: ['свадьба'], priceFromKzt: 90000 });
+    const nextDay = contractor({
+      id: 'next-day', eventFormats: ['свадьба'], priceFromKzt: 90000,
+      busyDates: new Set(['2026-11-14']),
+    });
+    const later = contractor({
+      id: 'later', eventFormats: ['свадьба'], priceFromKzt: 90000,
+      busyDates: new Set(['2026-11-14', '2026-11-15']),
+    });
+    const corporate = contractor({ id: 'wrong-event', eventFormats: ['корпоратив'], priceFromKzt: 90000 });
+    const alternatives = matching.alternatives([exact, nextDay, later, corporate], wedding, new Set(['exact']));
+
+    expect(alternatives.map(({ contractor: item }) => item.id)).toEqual(['next-day', 'later']);
+    expect(alternatives[0].availableDate).toBe('2026-11-15');
+    expect(alternatives[0].differences).toEqual([expect.objectContaining({
+      field: 'date', requested: '2026-11-14', offered: '2026-11-15',
+    })]);
+    expect(alternatives.some(({ contractor: item }) => item.id === corporate.id)).toBe(false);
+  });
+
+  it('orders moderate budget alternatives by the smallest overage', () => {
+    const alternatives = matching.alternatives([
+      contractor({ id: 'plus-20', eventFormats: ['свадьба'], priceFromKzt: 120000 }),
+      contractor({ id: 'plus-10', eventFormats: ['свадьба'], priceFromKzt: 110000 }),
+      contractor({ id: 'too-expensive', eventFormats: ['свадьба'], priceFromKzt: 150000 }),
+    ], wedding, new Set());
+
+    expect(alternatives.map(({ contractor: item }) => item.id)).toEqual(['plus-10', 'plus-20']);
+    expect(alternatives[0].differences[0]).toMatchObject({ field: 'budget', offered: 110000 });
+  });
+});

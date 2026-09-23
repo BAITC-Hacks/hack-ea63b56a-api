@@ -18,7 +18,8 @@ npm --prefix frontend ci
 npm --prefix frontend run dev
 ```
 
-Сайт: http://localhost:3000. API: http://localhost:3001/api/v1.
+Сайт: http://localhost:3000. Датасет: http://localhost:3000/dataset.
+API: http://localhost:3001/api/v1.
 Swagger: http://localhost:3001/api/docs. Health: http://localhost:3001/api/v1/health.
 Без API-ключа работает детерминированный подбор с объяснениями из исходных профилей;
 интерфейс явно показывает резервный режим.
@@ -80,6 +81,12 @@ curl -s http://localhost:3001/api/v1/recommendations -H 'Content-Type: applicati
 
 # Та же плотная категория в декабре: занятость меняет выдачу
 curl -s http://localhost:3001/api/v1/recommendations -H 'Content-Type: application/json' -d '{"city":"Алматы","date":"2026-12-20","eventFormat":"корпоратив","category":"Ведущий","budgetKzt":900000,"language":"русский"}'
+
+# Свободный текст: распознанные значения подставляются в форму, неизвестные остаются missing
+curl -s http://localhost:3001/api/v1/intake/parse -H 'Content-Type: application/json' -d '{"message":"хочу свадьбу на 65000 тенге"}'
+
+# Анонимизированный датасет: синтетические профили, первая страница
+curl -s 'http://localhost:3001/api/v1/contractors?profileType=synthetic&page=1&limit=12'
 ```
 
 Обязательные поля: `city`, `date`, `eventFormat`, `category`, `budgetKzt`.
@@ -88,19 +95,23 @@ curl -s http://localhost:3001/api/v1/recommendations -H 'Content-Type: applicati
 Календарь ограничен 23.09.2026–31.12.2026: вне окна API возвращает 400, поскольку
 отсутствие занятой даты вне датасета не доказывает доступность.
 
-Ответ содержит `status`, `count`, `totalCandidates`, `eligibleCount`, `message`,
+Ответ содержит `status`, `count`, `exactCount`, `alternativeCount`, `totalCandidates`, `eligibleCount`, `message`,
 `analysisMode`, `exclusions` и `items`. Три исхода: `matched`, `no_category_in_city`,
 `no_candidates_after_filters`. Они возвращаются с HTTP 200; некорректный запрос с 400.
 Количество исключений считается по каждой причине независимо: один профиль может нарушать
-несколько условий. Полный контракт: [docs/API-CONTRACT.md](docs/API-CONTRACT.md).
+несколько условий. Если точных совпадений меньше трёх, карточки с `matchType=alternative`
+сохраняют город, категорию и формат события, а каждое ослабленное условие перечислено в
+`differences`. Полный контракт: [docs/API-CONTRACT.md](docs/API-CONTRACT.md).
 
 ## Архитектура и ИИ
 
 ```text
-Next.js form -> same-origin proxy -> NestJS DTO validation
+Next.js form/chat -> same-origin proxy -> NestJS DTO validation
+  -> OpenAI/Zod intent extraction -> editable form values
   -> CSV repository -> city/category/date/budget/format/language/duration filters
   -> OpenAI Responses API + Zod Structured Outputs
-  -> validate IDs/scores/profile evidence -> stable score/price/ID sort -> top 3
+  -> validate IDs/scores/profile evidence -> stable score/price/ID sort
+  -> exact cards first -> transparent same-intent alternatives -> top 3
 ```
 
 ИИ получает только допустимых кандидатов и оценивает смысл описаний применительно к формату
@@ -134,8 +145,8 @@ npm --prefix frontend run build
 node scripts/smoke.mjs
 ```
 
-Smoke требует запущенные оба приложения и проверяет API, frontend proxy, повтор запроса,
-плотную/редкую/пустую категории, смену даты, флаги и валидацию. Unit/e2e-тесты backend
+Smoke требует запущенные оба приложения и проверяет API, frontend proxy, чат, альтернативы,
+датасет, повтор запроса, плотную/редкую/пустую категории, смену даты, флаги и валидацию. Unit/e2e-тесты backend
 проверяют ИИ через подмену SDK; это не подтверждает доступность модели или баланс аккаунта.
 Живую интеграцию с OpenAI проверяют с собственным ключом и `analysisMode=ai` в ответе.
 
