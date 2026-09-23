@@ -37,6 +37,21 @@ export type RecommendationResponse = {
   }[];
 };
 
+type RecommendationWireItem = Omit<RecommendationResponse["items"][number], "category" | "city_imputed" | "price_imputed"> & {
+  category?: string;
+  categories?: string[] | string;
+  city_imputed?: boolean;
+  price_imputed?: boolean;
+  cityImputed?: boolean;
+  priceImputed?: boolean;
+};
+
+type RecommendationWireResponse = Omit<RecommendationResponse, "items"> & {
+  items: RecommendationWireItem[];
+};
+
+const apiBase = (process.env.NEXT_PUBLIC_API_URL?.trim() || "/api/v1").replace(/\/+$/, "");
+
 async function readJson<T>(response: Response): Promise<T> {
   const body = await response.json().catch(() => null);
   if (!response.ok) {
@@ -49,13 +64,22 @@ async function readJson<T>(response: Response): Promise<T> {
 }
 
 export async function getCatalog(): Promise<Catalog> {
-  return readJson<Catalog>(await fetch("/api/v1/catalog", { cache: "no-store" }));
+  return readJson<Catalog>(await fetch(`${apiBase}/catalog`, { cache: "no-store" }));
 }
 
 export async function getRecommendations(input: RecommendationRequest): Promise<RecommendationResponse> {
-  return readJson<RecommendationResponse>(await fetch("/api/v1/recommendations", {
+  const response = await readJson<RecommendationWireResponse>(await fetch(`${apiBase}/recommendations`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(input),
   }));
+  return {
+    ...response,
+    items: response.items.map((item) => ({
+      ...item,
+      category: item.category ?? (Array.isArray(item.categories) ? item.categories.join(", ") : item.categories ?? input.category),
+      city_imputed: item.city_imputed ?? item.cityImputed ?? false,
+      price_imputed: item.price_imputed ?? item.priceImputed ?? false,
+    })),
+  };
 }

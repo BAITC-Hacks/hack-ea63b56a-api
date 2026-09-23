@@ -18,11 +18,13 @@ export class RecommendationsService {
   ) {}
 
   async recommend(dto: RecommendationRequestDto): Promise<RecommendationResponseDto> {
+    if (dto.eventType !== undefined && dto.eventFormat !== undefined && normalize(dto.eventType) !== normalize(dto.eventFormat))
+      throw new BadRequestException('eventType and eventFormat must describe the same event');
     const request = dto.normalized();
     if (!validIsoDate(request.date) || request.date < CALENDAR_FROM || request.date > CALENDAR_TO)
       throw new BadRequestException(`date must be from ${CALENDAR_FROM} through ${CALENDAR_TO}`);
     const key = this.snapshots.key({ request, datasetHash: this.contractors.datasetHash,
-      model: this.ai.model, promptVersion: PROMPT_VERSION, pipelineVersion: 'mvp-2', aiEnabled: this.ai.enabled });
+      model: this.ai.model, promptVersion: PROMPT_VERSION, pipelineVersion: 'mvp-3', aiEnabled: this.ai.enabled });
     return this.snapshots.getOrCreate(key, () => this.compute(request), (snapshot) => this.validSnapshot(snapshot, request));
   }
 

@@ -9,7 +9,12 @@ export class RecommendationRequestDto {
   @ApiProperty({ example: 'Алматы' }) @Transform(trim) @IsString() @IsNotEmpty() @MaxLength(100) city!: string;
   @ApiProperty({ example: '2026-10-15', description: `Calendar ${CALENDAR_FROM} through ${CALENDAR_TO}` })
   @IsString() @Matches(/^\d{4}-\d{2}-\d{2}$/) @IsDateString({ strict: true }) date!: string;
-  @ApiProperty({ example: 'корпоратив' }) @Transform(trim) @IsString() @IsNotEmpty() @MaxLength(100) eventFormat!: string;
+  @ApiPropertyOptional({ example: 'корпоратив', description: 'Event type; required unless eventFormat is supplied' })
+  @Transform(trim) @ValidateIf((o: RecommendationRequestDto, value) => value !== undefined || o.eventFormat === undefined)
+  @IsString() @IsNotEmpty() @MaxLength(100) eventType?: string;
+  @ApiPropertyOptional({ example: 'корпоратив', description: 'Compatible alias for eventType; both values must agree if supplied together' })
+  @Transform(trim) @ValidateIf((o: RecommendationRequestDto, value) => value !== undefined || o.eventType === undefined)
+  @IsString() @IsNotEmpty() @MaxLength(100) eventFormat?: string;
   @ApiProperty({ example: 'Ведущий' }) @Transform(trim) @IsString() @IsNotEmpty() @MaxLength(100) category!: string;
   @ApiProperty({ example: 900000 }) @IsInt() @Min(1) @Max(Number.MAX_SAFE_INTEGER) budgetKzt!: number;
   @ApiPropertyOptional({ example: 'русский' }) @Transform(trim) @ValidateIf((_o, value) => value !== undefined) @IsString() @IsNotEmpty() @MaxLength(100) language?: string;
@@ -17,7 +22,7 @@ export class RecommendationRequestDto {
 
   normalized() {
     return {
-      city: normalize(this.city), date: this.date, eventFormat: normalize(this.eventFormat),
+      city: normalize(this.city), date: this.date, eventFormat: normalize(this.eventType ?? this.eventFormat ?? ''),
       category: normalize(this.category), budgetKzt: this.budgetKzt,
       ...(this.language ? { language: normalize(this.language) } : {}),
       ...(this.durationHours !== undefined ? { durationHours: this.durationHours } : {}),

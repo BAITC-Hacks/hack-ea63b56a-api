@@ -35,8 +35,8 @@ describe("recommender", () => {
     const results = await screen.findByRole("region", { name: "Подходящие подрядчики" });
     expect(within(results).getByText(baseResult.message)).toBeInTheDocument();
     expect(within(results).getByText("Синтетический профиль")).toBeInTheDocument();
-    expect(within(results).getByText("Город указан приблизительно")).toBeInTheDocument();
-    expect(within(results).getByText("Цена оценочная")).toBeInTheDocument();
+    expect(within(results).getByText("Город добавлен при подготовке")).toBeInTheDocument();
+    expect(within(results).getByText("Цена добавлена при подготовке")).toBeInTheDocument();
     expect(within(results).getByText("Резервный алгоритм")).toBeInTheDocument();
   });
 

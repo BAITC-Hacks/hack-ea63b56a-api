@@ -12,6 +12,6 @@ ENV NODE_ENV=production PORT=3001 DATASET_PATH=/data/contractors.csv CACHE_DIR=/
 COPY backend/package*.json ./
 RUN npm ci --omit=dev && mkdir -p /data /app/backend/cache
 COPY --from=build /app/backend/dist ./dist
-COPY ["hackathon dataset anonymized.csv", "/data/contractors.csv"]
+COPY backend/data/contractors.csv /data/contractors.csv
 EXPOSE 3001
 CMD ["node", "dist/main.js"]

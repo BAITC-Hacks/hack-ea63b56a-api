@@ -15,5 +15,5 @@ test("fills a demo request and explains a result", async ({ page }) => {
   await page.getByRole("button", { name: /Корпоратив · ведущий/ }).click();
   await expect(page.getByRole("heading", { name: "Подходящие подрядчики" })).toBeVisible();
   await expect(page.getByText("Ведущий тест")).toBeVisible();
-  await expect(page.getByText("Профиль из данных")).toBeVisible();
+  await expect(page.getByText("Реальный профиль (анонимизирован)")).toBeVisible();
 });

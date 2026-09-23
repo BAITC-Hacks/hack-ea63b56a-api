@@ -1,0 +1,10 @@
+**
+!backend/
+!backend/package.json
+!backend/package-lock.json
+!backend/tsconfig*.json
+!backend/nest-cli.json
+!backend/src/
+!backend/src/**
+!backend/data/
+!backend/data/contractors.csv

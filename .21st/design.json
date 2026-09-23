@@ -1,0 +1,43 @@
+{
+  "version": 1,
+  "project": {
+    "name": "hackathon",
+    "productType": "event contractor recommender",
+    "stack": ["Next.js App Router", "React", "TypeScript", "Tailwind CSS"]
+  },
+  "sources": {
+    "tokens": ["frontend/tailwind.config.ts"],
+    "components": [],
+    "assets": ["frontend/public/brand-mark.svg"],
+    "instructions": [
+      "AGENTS.md"
+    ]
+  },
+  "design": {
+    "colorMode": "light",
+    "colors": { "ink": "#202c2d", "muted": "#657476", "line": "#dce5e2", "canvas": "#f7f9f7", "teal": "#0d766f", "amber": "#986014" },
+    "typography": { "body": "Segoe UI, Arial, sans-serif" },
+    "spacing": { "approach": "compact form and scannable results" },
+    "radius": { "cards": "6px", "controls": "6px" },
+    "shadows": { "approach": "minimal" },
+    "motion": {},
+    "density": "work-focused"
+  },
+  "components": {
+    "installed": [],
+    "preferredPrimitives": ["Radix Label", "native inputs and selects", "Lucide icons"],
+    "patterns": ["unframed filter form", "individual result cards", "three explicit result states"]
+  },
+  "constraints": {
+    "must": ["Russian product copy", "visible data provenance", "responsive and keyboard accessible", "no browser OpenAI calls"],
+    "avoid": ["marketing landing page", "decorative cards", "rounded cards over 8px"]
+  },
+  "decisions": [],
+  "evidence": [
+    {
+      "fact": "project.instructions",
+      "source": "AGENTS.md"
+    }
+  ],
+  "generatedAt": "2026-09-23T09:59:43.090Z"
+}
