@@ -5,6 +5,18 @@ export default {
   theme: {
     extend: {
       colors: {
+        background: "var(--background)",
+        foreground: "var(--foreground)",
+        card: { DEFAULT: "var(--card)", foreground: "var(--card-foreground)" },
+        popover: { DEFAULT: "var(--popover)", foreground: "var(--popover-foreground)" },
+        primary: { DEFAULT: "var(--primary)", foreground: "var(--primary-foreground)" },
+        secondary: { DEFAULT: "var(--secondary)", foreground: "var(--secondary-foreground)" },
+        accent: { DEFAULT: "var(--accent)", foreground: "var(--accent-foreground)" },
+        destructive: "var(--destructive)",
+        border: "var(--border)",
+        input: "var(--input)",
+        ring: "var(--ring)",
+        "muted-foreground": "var(--muted-foreground)",
         ink: "#202c2d",
         muted: "#657476",
         line: "#dce5e2",
@@ -27,6 +39,7 @@ export default {
         "flag-bg": "#f3f4f3",
         "selected-bg": "#edf6f2",
       },
+      borderRadius: { lg: "var(--radius)", md: "calc(var(--radius) - 2px)", sm: "calc(var(--radius) - 4px)" },
       boxShadow: { panel: "0 18px 50px -36px rgba(18, 47, 45, .28)" },
     },
   },

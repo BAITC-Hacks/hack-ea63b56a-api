@@ -38,7 +38,8 @@ try {
     await page.getByRole('heading', { name: 'Подходящие подрядчики' }).waitFor();
     assert.equal(await results.locator('li').count(), 1);
     assert.equal(await results.getByText('Синтетический профиль', { exact: true }).count(), 1);
-    await page.getByLabel('Категория подрядчика').selectOption('Инструменталист');
+    await page.getByLabel(/Категория подрядчика/).click();
+    await page.getByRole('option', { name: 'Инструменталист' }).click();
     await page.getByRole('button', { name: 'Найти подрядчиков' }).click();
     await page.getByRole('heading', { name: 'В городе нет этой категории' }).waitFor();
 

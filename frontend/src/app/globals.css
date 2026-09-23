@@ -1,11 +1,43 @@
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-:root { color-scheme: light; }
+:root {
+  color-scheme: light;
+  --background: #f5f7f6;
+  --foreground: #172322;
+  --card: #ffffff;
+  --card-foreground: #172322;
+  --popover: #ffffff;
+  --popover-foreground: #172322;
+  --primary: #0b6b65;
+  --primary-foreground: #ffffff;
+  --secondary: #e7eef4;
+  --secondary-foreground: #24394b;
+  --muted: #edf1ef;
+  --muted-foreground: #63716f;
+  --accent: #e9f4f1;
+  --accent-foreground: #0b5c57;
+  --destructive: #b42318;
+  --border: #d9e2df;
+  --input: #cfdad7;
+  --ring: #0b6b65;
+  --radius: 0.5rem;
+}
+
 html { scroll-behavior: smooth; }
-body { color: #202c2d; background: #f7f9f7; font-family: "Segoe UI", Arial, sans-serif; }
+body {
+  min-height: 100vh;
+  color: var(--foreground);
+  background: var(--background);
+  font-family: "Segoe UI", Arial, sans-serif;
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+}
 ::selection { background: #b9e6df; color: #163a38; }
+
 @layer base {
-  :focus-visible { outline: 3px solid #0d766f; outline-offset: 3px; }
+  * { @apply border-border; }
+  :focus-visible { outline: 3px solid rgba(11, 107, 101, 0.22); outline-offset: 2px; }
 }

@@ -15,24 +15,28 @@
   },
   "design": {
     "colorMode": "light",
-    "colors": { "ink": "#202c2d", "muted": "#657476", "line": "#dce5e2", "canvas": "#f7f9f7", "teal": "#0d766f", "amber": "#986014" },
+    "colors": { "ink": "#172322", "muted": "#63716f", "line": "#d9e2df", "canvas": "#f5f7f6", "teal": "#0b6b65", "amber": "#986014", "steel": "#24394b" },
     "typography": { "body": "Segoe UI, Arial, sans-serif" },
     "spacing": { "approach": "compact form and scannable results" },
-    "radius": { "cards": "6px", "controls": "6px" },
+    "radius": { "cards": "8px", "controls": "8px" },
     "shadows": { "approach": "minimal" },
     "motion": {},
     "density": "work-focused"
   },
   "components": {
-    "installed": [],
-    "preferredPrimitives": ["Radix Label", "native inputs and selects", "Lucide icons"],
-    "patterns": ["unframed filter form", "individual result cards", "three explicit result states"]
+    "installed": ["shadcn Button", "Input", "Select", "Label", "Card", "Badge", "Alert", "Skeleton", "Separator", "Tooltip"],
+    "preferredPrimitives": ["shadcn/Radix controls", "Lucide icons"],
+    "patterns": ["sticky request builder", "unframed results workspace", "individual comparison cards", "three explicit result states"]
   },
   "constraints": {
     "must": ["Russian product copy", "visible data provenance", "responsive and keyboard accessible", "no browser OpenAI calls"],
     "avoid": ["marketing landing page", "decorative cards", "rounded cards over 8px"]
   },
-  "decisions": [],
+  "decisions": [
+    "Use a two-panel marketplace workspace on desktop: sticky request builder on the left and results on the right.",
+    "Keep the interface operational and compact; use teal for actions, steel blue for secondary hierarchy, and amber only for price/provenance notices.",
+    "Use shadcn primitives for controls, feedback, loading, badges, and result cards; preserve an unframed single-column flow on mobile."
+  ],
   "evidence": [
     {
       "fact": "project.instructions",
