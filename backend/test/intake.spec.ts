@@ -104,6 +104,22 @@ describe('intake parsing and catalog normalization', () => {
     });
   });
 
+  it('treats blank optional AI strings as missing without exposing internal validation noise', async () => {
+    const { intake } = service({
+      ...emptyExtraction,
+      city: '',
+      date: '',
+      category: '',
+      language: '',
+      eventFormat: 'свадьба',
+      budgetKzt: 65000,
+    });
+    const result = await intake.parse('хочу свадьбу на 65000 тенге');
+    expect(result.values).toEqual({ eventFormat: 'свадьба', budgetKzt: 65000 });
+    expect(result.assumptions).toEqual([]);
+    expect(result.confidence).toBeGreaterThan(0);
+  });
+
   it('parses understandable values without AI and never invents missing fields', async () => {
     const { intake } = service(null);
     const result = await intake.parse('Нужна свадьба в Алматы 15.10.2026, фотограф на 6 часов, бюджет 65 тысяч тенге, русский язык');
@@ -134,14 +150,15 @@ describe('intake parsing and catalog normalization', () => {
     const result = await intake.parse('Организуем мероприятие');
     expect(result.values).toEqual({});
     expect(result.missing).toEqual(['city', 'date', 'eventFormat', 'category', 'budgetKzt']);
-    expect(result.assumptions).toEqual(expect.arrayContaining([
-      'Не удалось сопоставить поле city с каталогом.',
-      'Не удалось сопоставить поле eventFormat с каталогом.',
-      'Не удалось сопоставить поле category с каталогом.',
-      'Не удалось сопоставить поле language с каталогом.',
-      'Указанная дата не входит в доступный календарь.',
-    ]));
-    expect(result.confidence).toBe(0.1);
+    expect(result.assumptions).toEqual([]);
+    expect(result.confidence).toBe(0);
+  });
+
+  it('uses human-readable feedback for an unavailable value explicitly written by the user', async () => {
+    const { intake } = service({ ...emptyExtraction, city: 'Караганда', confidence: 0.8 });
+    const result = await intake.parse('Нужен подрядчик, город Караганда');
+    expect(result.values.city).toBeUndefined();
+    expect(result.assumptions).toContain('Не удалось сопоставить город «Караганда» с доступными вариантами.');
   });
 
   it('normalizes catalog casing but preserves the canonical catalog spelling', async () => {

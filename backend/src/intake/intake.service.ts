@@ -18,14 +18,12 @@ export class IntakeService {
     const fallback = this.fallback(message, catalog);
     const extracted = await this.ai.parse(message, catalog);
     const assumptions: string[] = [];
-    const aiValues = extracted ? this.sanitize(extracted, catalog, assumptions) : {};
+    const aiValues = extracted ? this.sanitize(extracted, catalog, assumptions, message) : {};
     const values = { ...fallback, ...aiValues };
     const missing = REQUIRED_FIELDS.filter((field) => values[field] === undefined);
     const confidence = extracted
       ? this.aiConfidence(extracted.confidence, values, assumptions)
       : this.fallbackConfidence(values);
-
-    if (extracted) assumptions.unshift(...extracted.assumptions.map((item) => item.trim()).filter(Boolean));
 
     return {
       values,
@@ -40,17 +38,19 @@ export class IntakeService {
     extracted: IntakeExtraction,
     catalog: IntakeCatalog,
     assumptions: string[],
+    message: string,
   ): IntakeValuesDto {
     const values: IntakeValuesDto = {};
-    this.catalogValue(extracted.city, catalog.cities, 'city', values, assumptions);
-    this.catalogValue(extracted.eventFormat, catalog.eventFormats, 'eventFormat', values, assumptions);
-    this.catalogValue(extracted.category, catalog.categories, 'category', values, assumptions);
-    this.catalogValue(extracted.language, catalog.languages, 'language', values, assumptions);
+    this.catalogValue(extracted.city, catalog.cities, 'city', values, assumptions, message);
+    this.catalogValue(extracted.eventFormat, catalog.eventFormats, 'eventFormat', values, assumptions, message);
+    this.catalogValue(extracted.category, catalog.categories, 'category', values, assumptions, message);
+    this.catalogValue(extracted.language, catalog.languages, 'language', values, assumptions, message);
 
-    if (extracted.date !== null) {
+    if (extracted.date !== null && extracted.date.trim()) {
       if (validIsoDate(extracted.date) && extracted.date >= CALENDAR_FROM && extracted.date <= CALENDAR_TO)
         values.date = extracted.date;
-      else assumptions.push('Указанная дата не входит в доступный календарь.');
+      else if (normalize(message).includes(normalize(extracted.date)))
+        assumptions.push('Указанная дата не входит в доступный календарь.');
     }
     if (extracted.budgetKzt !== null && Number.isSafeInteger(extracted.budgetKzt) && extracted.budgetKzt > 0)
       values.budgetKzt = extracted.budgetKzt;
@@ -66,11 +66,15 @@ export class IntakeService {
     field: K,
     target: IntakeValuesDto,
     assumptions: string[],
+    message: string,
   ): void {
-    if (value === null) return;
+    if (value === null || !value.trim()) return;
     const matched = allowed.find((candidate) => normalize(candidate) === normalize(value));
     if (matched) target[field] = matched;
-    else assumptions.push(`Не удалось сопоставить поле ${field} с каталогом.`);
+    else if (normalize(message).includes(normalize(value))) {
+      const labels = { city: 'город', eventFormat: 'формат мероприятия', category: 'категорию подрядчика', language: 'язык' };
+      assumptions.push(`Не удалось сопоставить ${labels[field]} «${value}» с доступными вариантами.`);
+    }
   }
 
   private fallback(message: string, catalog: IntakeCatalog): IntakeValuesDto {
@@ -133,9 +137,11 @@ export class IntakeService {
   }
 
   private aiConfidence(confidence: number, values: IntakeValuesDto, assumptions: string[]): number {
+    if (!Object.keys(values).length) return 0;
     const penalty = assumptions.length * 0.1;
     const fieldCount = Object.keys(values).length;
-    const coverageLimit = fieldCount === 0 ? 0.1 : 0.35 + fieldCount * 0.09;
-    return Number(Math.max(0, Math.min(confidence - penalty, coverageLimit, 1)).toFixed(2));
+    const coverageLimit = 0.35 + fieldCount * 0.09;
+    const modelConfidence = Math.max(0, Math.min(confidence - penalty, coverageLimit, 1));
+    return Number(Math.max(this.fallbackConfidence(values), modelConfidence).toFixed(2));
   }
 }
