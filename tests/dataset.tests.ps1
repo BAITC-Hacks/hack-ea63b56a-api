@@ -12,6 +12,14 @@ function Assert-True([bool]$Condition, [string]$Message) {
 }
 
 $tests = [ordered]@{
+    'Quality flags contain explicit boolean values for every contractor' = {
+        Assert-True ($rows.Count -gt 0) 'Dataset is empty'
+        foreach ($row in $rows) {
+            foreach ($field in @('synthetic', 'city_imputed', 'price_imputed')) {
+                Assert-True (@('True', 'False') -ccontains $row.$field) "Invalid $field flag for $($row.id): '$($row.$field)'"
+            }
+        }
+    }
     'Dataset has the documented schema and 66 unique contractor IDs' = {
         $columns = @(
             'id', 'anon_name', 'categories', 'city', 'city_imputed', 'synthetic',
