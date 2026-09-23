@@ -1,0 +1,22 @@
+{
+  "name": "hackalem-contractor-recommender",
+  "version": "0.1.0",
+  "private": true,
+  "workspaces": [
+    "apps/api",
+    "apps/web"
+  ],
+  "scripts": {
+    "dev": "concurrently -n api,web -c cyan,magenta \"npm run start:dev -w @hackalem/api\" \"npm run dev -w @hackalem/web\"",
+    "build": "npm run build -w @hackalem/api && npm run build -w @hackalem/web",
+    "lint": "npm run lint -w @hackalem/api && npm run lint -w @hackalem/web",
+    "test": "npm run test -w @hackalem/api",
+    "start": "concurrently -n api,web -c cyan,magenta \"npm run start:prod -w @hackalem/api\" \"npm run start -w @hackalem/web\""
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  },
+  "engines": {
+    "node": ">=20.9"
+  }
+}
