@@ -66,7 +66,8 @@ export class RecommenderService {
           left.contractor.priceFromKzt - right.contractor.priceFromKzt ||
           left.contractor.id.localeCompare(right.contractor.id)
     );
-    const items = scored.slice(0, 3).map((candidate, index) => this.toItem(candidate, request, index));
+    const selected = scored.slice(0, 3);
+    const items = selected.map((candidate, index) => this.toItem(candidate, request, index, selected));
     const aiExplanations = await this.openAi.explainRecommendations(request, items);
     if (aiExplanations) {
       for (const item of items) item.explanation = aiExplanations.get(item.id) ?? item.explanation;
@@ -88,15 +89,30 @@ export class RecommenderService {
       } satisfies ExcludedItemDto)),
       filterSummary,
       items,
-      message: items.length
-        ? items.length < 3
-          ? `Нашли ${items.length} подходящ${items.length === 1 ? 'его' : 'их'} подрядчик${items.length === 1 ? 'а' : 'ов'}: ${excluded.length ? 'остальные не прошли обязательные условия' : 'это все профили этой категории в городе'}.`
-          : 'Нашли 3 наиболее подходящих подрядчиков и сравнили их по вашим условиям.'
-        : `В городе ${request.city} есть подрядчики категории «${request.category}», но никто не прошёл все выбранные условия.`,
+      message: this.resultMessage(items.length, categoryCandidates.length, excluded.length, filterSummary, request),
       status: items.length ? RecommendationStatus.MATCHED : RecommendationStatus.NO_CANDIDATES_AFTER_FILTERS,
       suggestions,
       totalConsidered: categoryCandidates.length
     };
+  }
+
+  private resultMessage(found: number, total: number, excluded: number, summary: FilterSummaryDto[], request: RecommendationRequestDto): string {
+    if (found === 3) return 'Подобрали 3 подрядчиков по вашим условиям.';
+    const reasons = summary.map((item) => `${item.label} — ${item.count}`).join('; ');
+    const overlap = summary.reduce((sum, item) => sum + item.count, 0) > excluded
+      ? ' У одного профиля может быть несколько причин.' : '';
+    if (found === 0) {
+      return `В городе ${request.city} в категории «${request.category}» есть ${total} ${this.profileWord(total)}, но ни один не подходит: ${reasons}.${overlap}`;
+    }
+    const count = `Подобрали ${found} подрядчика вместо трёх`;
+    return excluded
+      ? `${count}: не прошли условия — ${excluded} из ${total} (${reasons}).${overlap}`
+      : `${count}: в каталоге этого города всего ${total} ${this.profileWord(total)} этой категории, и все подходят.`;
+  }
+
+  private profileWord(count: number): string {
+    if (count % 100 >= 11 && count % 100 <= 14) return 'профилей';
+    return count % 10 === 1 ? 'профиль' : count % 10 >= 2 && count % 10 <= 4 ? 'профиля' : 'профилей';
   }
 
   private getExclusions(
@@ -163,7 +179,8 @@ export class RecommenderService {
   private toItem(
     candidate: ScoredContractor,
     request: RecommendationRequestDto,
-    rank: number
+    rank: number,
+    peers: ScoredContractor[]
   ): RecommendationItemDto {
     const item = candidate.contractor;
     return {
@@ -172,7 +189,7 @@ export class RecommenderService {
       cityImputed: item.cityImputed,
       description: item.description,
       eventFormats: item.eventFormats,
-      explanation: this.explainer.explain(candidate, request, rank),
+      explanation: this.explainer.explain(candidate, request, rank, peers),
       id: item.id,
       languages: item.languages,
       maxHours: item.maxHours,

@@ -86,7 +86,8 @@ button:focus-visible, a:focus-visible, summary:focus-visible { outline: 3px soli
 .errorState button { background: none; border: 0; color: #874124; cursor: pointer; font-size: 12px; font-weight: 700; margin-left: auto; }
 
 .results { margin: 0 auto; max-width: 1060px; padding: 70px 24px 90px; }
-.resultTop { align-items: flex-end; display: flex; justify-content: space-between; }
+.resultTop { align-items: flex-end; display: flex; gap: 24px; justify-content: space-between; }
+.resultTop > button { flex-shrink: 0; }
 .resultEyebrow, .sectionHeading > span { color: var(--green); font-size: 11px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
 .resultTop h2 { font-family: Georgia, serif; font-size: 40px; font-weight: 400; letter-spacing: -.03em; margin: 8px 0 0; }
 .outlineButton { background: white; border: 1px solid #ccd5ce; border-radius: 10px; color: #475149; cursor: pointer; font-size: 12px; font-weight: 700; padding: 11px 15px; }
@@ -125,6 +126,7 @@ button:focus-visible, a:focus-visible, summary:focus-visible { outline: 3px soli
 .blockerPanel, .suggestions { background: white; border: 1px solid var(--line); border-radius: 16px; margin-top: 18px; padding: 22px; }
 .blockerPanel h3, .suggestions h3 { font-size: 15px; margin: 0 0 14px; }
 .blockerPanel > div { display: flex; flex-wrap: wrap; gap: 8px; }
+.blockerPanel > p { color: var(--muted); font-size: 12px; margin: 14px 0 0; }
 .blockerPanel span { background: #fff4ed; border-radius: 8px; color: #775140; font-size: 12px; padding: 9px 12px; }
 .suggestions button { align-items: center; background: var(--mint); border: 0; border-radius: 9px; color: var(--green); cursor: pointer; display: flex; font-size: 12px; font-weight: 700; justify-content: space-between; margin-top: 8px; padding: 12px 14px; width: 100%; }
 .excluded { background: white; border: 1px solid var(--line); border-radius: 14px; margin-top: 20px; }

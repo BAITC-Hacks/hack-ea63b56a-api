@@ -321,9 +321,14 @@ function Loading({ step }: { step: number }): React.ReactElement {
 }
 
 function Results({ form, onEdit, onSuggestion, parserSource, result, summary }: { form: SearchForm; onEdit: () => void; onSuggestion: (item: RecommendationResponse['suggestions'][number]) => void; parserSource: 'openai' | 'fallback' | null; result: RecommendationResponse; summary: string[] }): React.ReactElement {
+  const title = result.status === 'matched'
+    ? `Подобрали: ${result.items.length}`
+    : result.status === 'no_category_in_city'
+      ? 'В этом городе нет такой категории'
+      : 'Кандидаты есть, но не подходят по условиям';
   return (
     <section className="results" id="results">
-      <div className="resultTop"><div><span className="resultEyebrow">Результаты подбора</span><h2>{result.status === 'matched' ? 'Ваши рекомендации' : 'Подходящих вариантов пока нет'}</h2></div><button className="outlineButton" onClick={onEdit} type="button">Изменить условия</button></div>
+      <div className="resultTop"><div><span className="resultEyebrow">Результаты подбора по каталогу</span><h2>{title}</h2></div><button className="outlineButton" onClick={onEdit} type="button">Изменить условия</button></div>
       <div className="summary">{summary.map((item) => <span key={item}>{item}</span>)}</div>
       <div className={result.ai.used || parserSource === 'openai' ? 'aiStatus active' : 'aiStatus'}>
         <SparkIcon />
@@ -334,8 +339,9 @@ function Results({ form, onEdit, onSuggestion, parserSource, result, summary }: 
       <p className="resultMessage">{result.message}</p>
 
       {result.items.length > 0 && <div className="cards">{result.items.map((item, index) => <ContractorCard item={item} key={item.id} rank={index + 1} />)}</div>}
+      {result.items.length > 0 && <p className="resultMessage">Сравниваем начальные цены из каталога. Итоговую стоимость и доступность на дату подтвердите у подрядчика.</p>}
 
-      {result.filterSummary.length > 0 && result.items.length === 0 && <div className="blockerPanel"><h3>Что мешает найти?</h3><div>{result.filterSummary.map((reason) => <span key={reason.code}><strong>{reason.count}</strong> {reason.label}</span>)}</div></div>}
+      {result.filterSummary.length > 0 && result.items.length === 0 && <div className="blockerPanel"><h3>Почему не подошли?</h3><div>{result.filterSummary.map((reason) => <span key={reason.code}><strong>{reason.count}</strong> {reason.label}</span>)}</div><p>У одного кандидата может быть несколько причин.</p></div>}
       {result.suggestions.length > 0 && <div className="suggestions"><h3>Что можно изменить?</h3>{result.suggestions.map((item) => <button key={item.type} onClick={() => onSuggestion(item)} type="button"><span>{item.label} — доступно: {item.candidateCount}</span><ArrowIcon /></button>)}</div>}
 
       {result.excluded.length > 0 && <details className="excluded"><summary>Кого мы исключили и почему? <span>{result.excluded.length}</span></summary><div className="excludedList">{result.excluded.map((item) => <article key={item.id}><div><strong>{item.name}</strong><small>от {money.format(item.priceFromKzt)} ₸</small></div><ul>{item.reasons.map((reason) => <li key={reason}>{reason}</li>)}</ul></article>)}</div></details>}

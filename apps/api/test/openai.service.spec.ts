@@ -54,14 +54,72 @@ describe('OpenAI service with an offline SDK mock', () => {
   }] satisfies RecommendationItemDto[];
 
   it('accepts complete explanations for expected candidates', async () => {
-    const explanation = 'Свободен 15 октября, цена от 100 000 ₸ укладывается в бюджет.';
-    create.mockResolvedValue({ status: 'completed', output_text: JSON.stringify({ items: [{ id: 'known', explanation }] }) });
-    expect(await new OpenAiService().explainRecommendations(request, items)).toEqual(new Map([['known', explanation]]));
+    create.mockResolvedValue({ status: 'completed', output_text: JSON.stringify({ items: [{ id: 'known', evidenceId: 0 }] }) });
+    const result = await new OpenAiService().explainRecommendations(request, items);
+    expect(result).not.toBeNull();
+    expect(result!.get('known')).toMatch(/Интеллектуальный юмор/i);
+    expect(result!.get('known')!.replace(/\s/g, '')).toContain('100000');
   });
 
   it('rejects explanations that omit expected candidates', async () => {
-    create.mockResolvedValue({ status: 'completed', output_text: JSON.stringify({ items: [{ id: 'unknown', explanation: 'Достаточно длинное объяснение чужой карточки.' }] }) });
+    create.mockResolvedValue({ status: 'completed', output_text: JSON.stringify({ items: [{ id: 'unknown', evidenceId: 0 }] }) });
     expect(await new OpenAiService().explainRecommendations(request, items)).toBeNull();
+  });
+
+  it.each([-1, 999, 0.5, '0', null])('rejects invalid evidence selector %s', async (evidenceId) => {
+    create.mockResolvedValue({ status: 'completed', output_text: JSON.stringify({ items: [{ id: 'known', evidenceId }] }) });
+    expect(await new OpenAiService().explainRecommendations(request, items)).toBeNull();
+  });
+
+  it('does not display invented prose supplied by the model instead of factual evidence', async () => {
+    create.mockResolvedValue({ status: 'completed', output_text: JSON.stringify({ items: [{
+      id: 'known', explanation: 'Гарантированно свободен, бесплатно работает 24 часа и говорит на японском.'
+    }] }) });
+    expect(await new OpenAiService().explainRecommendations(request, items)).toBeNull();
+  });
+
+  it('rejects duplicate candidate ids even when the result length matches', async () => {
+    const pair = [items[0]!, { ...items[0]!, id: 'second', description: 'Музыкальные викторины.' }];
+    create.mockResolvedValue({ status: 'completed', output_text: JSON.stringify({ items: [
+      { id: 'known', evidenceId: 0 }, { id: 'known', evidenceId: 0 }
+    ] }) });
+    expect(await new OpenAiService().explainRecommendations(request, pair)).toBeNull();
+  });
+
+  it('cannot attach another candidate evidence using the same selector', async () => {
+    const pair = [items[0]!, { ...items[0]!, id: 'second', description: 'Музыкальные викторины.' }];
+    create.mockResolvedValue({ status: 'completed', output_text: JSON.stringify({ items: [
+      { id: 'known', evidenceId: 0 }, { id: 'second', evidenceId: 0 }
+    ] }) });
+    const result = await new OpenAiService().explainRecommendations(request, pair);
+    expect(result).not.toBeNull();
+    expect(result!.get('known')).toMatch(/Интеллектуальный юмор/i);
+    expect(result!.get('known')).not.toMatch(/Музыкальные викторины/i);
+    expect(result!.get('second')).toMatch(/Музыкальные викторины/i);
+  });
+
+  it('offers only distinguishing evidence to the model when candidates share their introduction', async () => {
+    const shared = 'Современный стиль и интерактивы для гостей.';
+    const pair = [
+      { ...items[0]!, description: `${shared} Проводит научные эксперименты со зрителями.` },
+      { ...items[0]!, id: 'second', description: `${shared} Проводит музыкальные викторины с командными раундами.` }
+    ];
+    create.mockResolvedValue({ status: 'completed', output_text: JSON.stringify({ items: [
+      { id: 'known', evidenceId: 0 }, { id: 'second', evidenceId: 0 }
+    ] }) });
+    const result = await new OpenAiService().explainRecommendations(request, pair);
+    expect(result).not.toBeNull();
+    expect(result!.get('known')).toMatch(/научные эксперименты/i);
+    expect(result!.get('second')).toMatch(/музыкальные викторины/i);
+    const calls = create.mock.calls as Array<[{ input: string }]>;
+    const input = JSON.parse(calls[0]![0].input) as {
+      candidates: Array<{ evidence: Array<{ text: string }> }>
+    };
+    expect(input.candidates).toHaveLength(2);
+    for (const candidate of input.candidates) {
+      expect(candidate.evidence.length).toBeGreaterThan(0);
+      expect(candidate.evidence.some((entry) => entry.text.includes('Современный стиль'))).toBe(false);
+    }
   });
 
   it('does not instantiate or call the SDK when no key is configured', async () => {
