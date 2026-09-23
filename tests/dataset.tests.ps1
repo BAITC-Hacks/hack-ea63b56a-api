@@ -12,6 +12,25 @@ function Assert-True([bool]$Condition, [string]$Message) {
 }
 
 $tests = [ordered]@{
+    'Prices are nonnegative numbers and optional hour limits are positive' = {
+        Assert-True ($rows.Count -gt 0) 'Dataset is empty'
+        foreach ($row in $rows) {
+            $price = [decimal]0
+            $validPrice = [decimal]::TryParse(
+                $row.price_from_kzt, [System.Globalization.NumberStyles]::AllowDecimalPoint,
+                [cultureinfo]::InvariantCulture, [ref]$price
+            )
+            Assert-True ($validPrice -and $price -ge 0) "Invalid price for $($row.id): '$($row.price_from_kzt)'"
+            # An empty max_hours means the service is not tied to on-site hours.
+            if ($row.max_hours -eq '') { continue }
+            $hours = [decimal]0
+            $validHours = [decimal]::TryParse(
+                $row.max_hours, [System.Globalization.NumberStyles]::AllowDecimalPoint,
+                [cultureinfo]::InvariantCulture, [ref]$hours
+            )
+            Assert-True ($validHours -and $hours -gt 0) "Invalid hour limit for $($row.id): '$($row.max_hours)'"
+        }
+    }
     'Quality flags contain explicit boolean values for every contractor' = {
         Assert-True ($rows.Count -gt 0) 'Dataset is empty'
         foreach ($row in $rows) {
