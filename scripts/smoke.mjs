@@ -27,14 +27,18 @@ async function recommend(query, expectedStatus) {
     assert.equal(typeof card.price_imputed, 'boolean');
     assert.equal(card.city, query.city);
     assert.equal(card.category, query.category);
+    assert.ok(Array.isArray(card.criteria) && card.criteria.length >= 5);
+    assert.ok(card.criteria.every(criterion => ['matched', 'different'].includes(criterion.status)));
     if (card.matchType === 'exact') {
       assert.ok(card.priceFromKzt <= query.budgetKzt);
       assert.equal(card.availableDate, query.date);
       assert.deepEqual(card.differences, []);
+      assert.ok(card.criteria.every(criterion => criterion.status === 'matched'));
     } else {
       assert.equal(card.matchType, 'alternative');
       assert.equal(card.alternative, true);
       assert.ok(card.differences.length > 0);
+      assert.ok(card.criteria.some(criterion => criterion.status === 'different'));
     }
   }
   console.log(JSON.stringify({ query, status: data.status, count: data.count, mode: data.analysisMode,

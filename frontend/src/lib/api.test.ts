@@ -30,6 +30,10 @@ describe("recommendations API", () => {
       category: "Ведущий, Ведущий церемонии", city_imputed: true, price_imputed: false,
       matchType: "exact", alternative: false, availableDate: input.date, differences: [],
     });
+    expect(result.items[0].criteria).toEqual(expect.arrayContaining([
+      expect.objectContaining({ key: "category", requested: "Ведущий", status: "matched" }),
+      expect.objectContaining({ key: "budget", requested: expect.stringContaining("900"), status: "matched" }),
+    ]));
   });
 });
 

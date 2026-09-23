@@ -6,6 +6,14 @@ import { resolve, join } from 'node:path';
 import { z } from 'zod';
 import { RecommendationResponseDto } from './recommendation.dto';
 
+const CriterionSchema = z.object({
+  key: z.enum(['city', 'category', 'eventFormat', 'date', 'budget', 'language', 'duration']),
+  label: z.string().min(1),
+  requested: z.string().min(1),
+  offered: z.string().min(1),
+  status: z.enum(['matched', 'different']),
+}).strict();
+
 const SnapshotSchema = z.object({
   status: z.enum(['matched', 'no_category_in_city', 'no_candidates_after_filters']),
   count: z.number().int().min(0).max(3), exactCount: z.number().int().min(0).max(3),
@@ -24,6 +32,7 @@ const SnapshotSchema = z.object({
     matchType: z.enum(['exact', 'alternative']), alternative: z.boolean(),
     availableDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
     matchedFields: z.array(z.enum(['city', 'category', 'eventFormat', 'date', 'budget', 'language', 'duration'])),
+    criteria: z.array(CriterionSchema).min(5).max(7),
     differences: z.array(z.object({
       field: z.enum(['date', 'budget', 'language', 'duration']),
       requested: z.union([z.string(), z.number()]),

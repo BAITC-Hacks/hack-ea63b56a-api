@@ -21,6 +21,7 @@ try {
     await page.getByRole('heading', { name: 'Подходящие подрядчики' }).waitFor();
     const results = page.locator('section[aria-labelledby="results-title"]');
     assert.equal(await results.locator('li').count(), 3);
+    assert.equal(await results.getByRole('table', { name: /Сравнение условий/ }).count(), 3);
     const idsBefore = await results.locator('h3').allTextContents();
     await page.getByRole('button', { name: 'Найти подрядчиков' }).click();
     await page.getByRole('heading', { name: 'Подходящие подрядчики' }).waitFor();
@@ -34,6 +35,7 @@ try {
     assert.ok((await results.textContent()).includes('заняты'));
     assert.ok(await results.getByText('Близкая альтернатива', { exact: true }).count() > 0);
     assert.ok(await results.getByText('Что отличается от запроса', { exact: true }).count() > 0);
+    assert.ok(await results.getByText('Есть отличие', { exact: true }).count() > 0);
 
     await page.getByRole('button', { name: /Корпоратив · флорист/ }).click();
     await page.getByRole('heading', { name: 'Подходящие подрядчики' }).waitFor();

@@ -131,6 +131,13 @@ describe('recommendations, snapshots and fallback', () => {
       expect(item.explanation).toContain('900');
       expect(item.explanation).toContain('корпоратив');
       expect(item).toMatchObject({ matchType: 'exact', alternative: false, availableDate: dense.date, differences: [] });
+      expect(item.criteria.map((criterion) => criterion.key)).toEqual([
+        'category', 'eventFormat', 'city', 'date', 'budget', 'language',
+      ]);
+      expect(item.criteria.every((criterion) => criterion.status === 'matched')).toBe(true);
+      expect(item.criteria.find((criterion) => criterion.key === 'budget')).toMatchObject({
+        requested: 'до 900 000 ₸', offered: expect.stringMatching(/^от .+ ₸$/u),
+      });
       const quote = item.explanation.match(/(?:описание профиля|формату): «(.+)»/u)?.[1];
       expect(repo.contractors.find((c) => c.id === item.id)!.description.replace(/\s+/g, ' ')).toContain(quote);
     }
@@ -177,7 +184,13 @@ describe('recommendations, snapshots and fallback', () => {
     expect(result.items[1].differences).toEqual([expect.objectContaining({
       field: 'date', requested: '2026-11-14', offered: '2026-11-15',
     })]);
+    expect(result.items[1].criteria.find((criterion) => criterion.key === 'date')).toMatchObject({
+      status: 'different', requested: '14 ноября 2026 г.', offered: 'Свободен 15 ноября 2026 г.',
+    });
     expect(result.items[2].differences).toEqual([expect.objectContaining({ field: 'budget', offered: 110_000 })]);
+    expect(result.items[2].criteria.find((criterion) => criterion.key === 'budget')).toMatchObject({
+      status: 'different', requested: 'до 100 000 ₸', offered: 'от 110 000 ₸',
+    });
     expect(result.items.every((item) => item.id !== 'wrong-event')).toBe(true);
     expect(result.message).toContain('компромисс');
   });

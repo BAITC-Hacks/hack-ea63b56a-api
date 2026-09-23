@@ -19,6 +19,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { getCatalog, getRecommendations, type Catalog, type IntentParseResponse, type RecommendationRequest, type RecommendationResponse } from "@/lib/api";
@@ -78,6 +79,36 @@ function categoryIcon(category: string) {
   const Icon = value.includes("флор") ? Flower2 : value.includes("фото") ? Camera :
     value.includes("муз") || value.includes("инструм") ? Music2 : value.includes("ведущ") ? MicVocal : BriefcaseBusiness;
   return <Icon aria-hidden="true" />;
+}
+
+function CriteriaComparison({ item }: { item: RecommendationResponse["items"][number] }) {
+  return <div className="mt-5 border-t border-border pt-4">
+    <div className="mb-3">
+      <p className="text-xs font-extrabold uppercase text-muted-foreground">Сверка условий</p>
+      <p className="mt-1 text-xs leading-5 text-muted-foreground">Сравниваем ваш запрос с данными профиля. Отличия не скрываются и не считаются точным совпадением.</p>
+    </div>
+    <Table className="min-w-[640px]" aria-label={`Сравнение условий для ${item.name}`}>
+      <TableHeader><TableRow>
+        <TableHead className="w-[19%]">Критерий</TableHead>
+        <TableHead className="w-[27%]">Ваш запрос</TableHead>
+        <TableHead className="w-[34%]">У исполнителя</TableHead>
+        <TableHead className="w-[20%]">Результат</TableHead>
+      </TableRow></TableHeader>
+      <TableBody>{item.criteria.map((criterion) => {
+        const matched = criterion.status === "matched";
+        return <TableRow key={`${item.id}-${criterion.key}`} className={matched ? "bg-[#f8fbfa]" : "bg-[#fff8e9] hover:bg-[#fff3d7]"}>
+          <TableCell className="font-bold text-foreground">{criterion.label}</TableCell>
+          <TableCell className="text-foreground/80">{criterion.requested}</TableCell>
+          <TableCell className={matched ? "text-foreground/80" : "font-semibold text-[#76521f]"}>{criterion.offered}</TableCell>
+          <TableCell><Badge variant="outline" className={matched
+            ? "border-[#b8dfd3] bg-[#eef8f4] text-[#215f50]"
+            : "border-[#d6a34e] bg-[#fff3d7] text-[#76521f]"}>
+            {matched ? <CheckCircle2 /> : <CircleAlert />}{matched ? "Совпадает" : "Есть отличие"}
+          </Badge></TableCell>
+        </TableRow>;
+      })}</TableBody>
+    </Table>
+  </div>;
 }
 
 function ResultsSkeleton() {
@@ -180,6 +211,7 @@ function Results({ result, request }: { result: RecommendationResponse; request:
               <p className="text-xs font-extrabold uppercase text-muted-foreground">Почему подходит</p>
               <p className="text-sm leading-6 text-foreground/85">{item.explanation}</p>
             </div>
+            <CriteriaComparison item={item} />
           </CardContent>
         </Card>
       </li>)}

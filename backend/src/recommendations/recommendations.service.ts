@@ -24,7 +24,7 @@ export class RecommendationsService {
     if (!validIsoDate(request.date) || request.date < CALENDAR_FROM || request.date > CALENDAR_TO)
       throw new BadRequestException(`date must be from ${CALENDAR_FROM} through ${CALENDAR_TO}`);
     const key = this.snapshots.key({ request, datasetHash: this.contractors.datasetHash,
-      model: this.ai.model, promptVersion: PROMPT_VERSION, pipelineVersion: 'mvp-5-human-copy', aiEnabled: this.ai.enabled });
+      model: this.ai.model, promptVersion: PROMPT_VERSION, pipelineVersion: 'mvp-6-criteria-table', aiEnabled: this.ai.enabled });
     return this.snapshots.getOrCreate(key, () => this.compute(request), (snapshot) => this.validSnapshot(snapshot, request));
   }
 
@@ -56,10 +56,14 @@ export class RecommendationsService {
           normalize(item.category) !== request.category) return false;
         if (index < exactCount)
           return !!exact && item.matchType === 'exact' && !item.alternative && item.availableDate === request.date &&
-            item.differences.length === 0;
+            item.differences.length === 0 &&
+            JSON.stringify(item.criteria) === JSON.stringify(this.criteria(candidate, request, request.date, []));
         return !!alternative && item.matchType === 'alternative' && item.alternative &&
           item.availableDate === alternative.availableDate &&
-          JSON.stringify(item.differences) === JSON.stringify(alternative.differences);
+          JSON.stringify(item.differences) === JSON.stringify(alternative.differences) &&
+          JSON.stringify(item.criteria) === JSON.stringify(this.criteria(
+            candidate, request, alternative.availableDate, alternative.differences,
+          ));
       });
   }
 
@@ -156,7 +160,56 @@ export class RecommendationsService {
       availableDate,
       matchedFields,
       differences,
+      criteria: this.criteria(contractor, request, availableDate, differences),
     };
+  }
+
+  private criteria(
+    contractor: Contractor,
+    request: RequestCriteria,
+    availableDate: string,
+    differences: AlternativeMatch['differences'],
+  ) {
+    const differs = (field: AlternativeMatch['differences'][number]['field']) =>
+      differences.some((difference) => difference.field === field);
+    const comparison: Array<{
+      key: MatchField;
+      label: string;
+      requested: string;
+      offered: string;
+      status: 'matched' | 'different';
+    }> = [
+      {
+        key: 'category', label: 'Категория', requested: this.label(request.category),
+        offered: contractor.categories.join(', '), status: 'matched',
+      },
+      {
+        key: 'eventFormat', label: 'Формат события', requested: request.eventFormat,
+        offered: contractor.eventFormats.join(', '), status: 'matched',
+      },
+      {
+        key: 'city', label: 'Город', requested: this.label(request.city),
+        offered: contractor.city, status: 'matched',
+      },
+      {
+        key: 'date', label: 'Дата', requested: this.date(request.date),
+        offered: `Свободен ${this.date(availableDate)}`, status: differs('date') ? 'different' : 'matched',
+      },
+      {
+        key: 'budget', label: 'Бюджет', requested: `до ${this.money(request.budgetKzt)} ₸`,
+        offered: `от ${this.money(contractor.priceFromKzt)} ₸`, status: differs('budget') ? 'different' : 'matched',
+      },
+    ];
+    if (request.language) comparison.push({
+      key: 'language', label: 'Язык', requested: request.language,
+      offered: contractor.languages.join(', '), status: differs('language') ? 'different' : 'matched',
+    });
+    if (request.durationHours !== undefined) comparison.push({
+      key: 'duration', label: 'Длительность', requested: `${request.durationHours} ч`,
+      offered: contractor.maxHours === null ? 'Без ограничения по часам' : `до ${contractor.maxHours} ч`,
+      status: differs('duration') ? 'different' : 'matched',
+    });
+    return comparison;
   }
 
   private message(
@@ -209,6 +262,10 @@ export class RecommendationsService {
   private date(value: string): string {
     return new Intl.DateTimeFormat('ru-RU', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' })
       .format(new Date(`${value}T00:00:00.000Z`));
+  }
+
+  private money(value: number): string {
+    return new Intl.NumberFormat('ru-RU').format(value);
   }
 
   private word(count: number, one: string, few: string, many: string): string {

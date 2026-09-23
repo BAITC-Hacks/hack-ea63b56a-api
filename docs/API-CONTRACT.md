@@ -56,6 +56,13 @@ type RecommendationResponse = {
       offered: string | number;
       message: string;
     }[];
+    criteria: {
+      key: 'city' | 'category' | 'eventFormat' | 'date' | 'budget' | 'language' | 'duration';
+      label: string;
+      requested: string;
+      offered: string;
+      status: 'matched' | 'different';
+    }[];
   }[];
 };
 ```
@@ -70,6 +77,11 @@ format unchanged, and may only relax date, budget (up to 30%), language or durat
 4 hours). Every relaxation is returned in `differences`; a card with hidden compromises is
 invalid. If there is no requested category in the city, the API explains that outcome instead
 of substituting another service.
+
+`criteria` is a presentation-ready, grounded comparison between the normalized request and the
+contractor profile. It always contains category, event format, city, date and budget; language
+and duration appear only when the user requested them. It supplements `explanation` rather than
+replacing the individual 1-2 sentence recommendation.
 
 ## AI and reproducibility
 

@@ -50,6 +50,15 @@ export class MatchDifferenceDto {
   @ApiProperty() message!: string;
 }
 
+export class CriterionComparisonDto {
+  @ApiProperty({ enum: ['city', 'category', 'eventFormat', 'date', 'budget', 'language', 'duration'] })
+  key!: 'city' | 'category' | 'eventFormat' | 'date' | 'budget' | 'language' | 'duration';
+  @ApiProperty() label!: string;
+  @ApiProperty() requested!: string;
+  @ApiProperty() offered!: string;
+  @ApiProperty({ enum: ['matched', 'different'] }) status!: 'matched' | 'different';
+}
+
 export class RecommendationItemDto {
   @ApiProperty() id!: string;
   @ApiProperty() name!: string;
@@ -66,6 +75,7 @@ export class RecommendationItemDto {
   @ApiProperty({ type: [String], enum: ['city', 'category', 'eventFormat', 'date', 'budget', 'language', 'duration'] })
   matchedFields!: string[];
   @ApiProperty({ type: [MatchDifferenceDto] }) differences!: MatchDifferenceDto[];
+  @ApiProperty({ type: [CriterionComparisonDto] }) criteria!: CriterionComparisonDto[];
 }
 
 export class RecommendationResponseDto {

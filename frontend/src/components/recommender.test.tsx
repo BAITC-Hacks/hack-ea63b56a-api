@@ -26,7 +26,14 @@ const baseResult: RecommendationResponse = {
   items: [{ id: "c-1", name: "Тестовый ведущий", category: "Ведущий", city: "Алматы", priceFromKzt: 300000,
     explanation: "Укладывается в бюджет 900 000 ₸ и свободен 15 октября; работает на корпоративных событиях на русском языке.",
     synthetic: true, city_imputed: true, price_imputed: true, matchType: "exact", alternative: false,
-    availableDate: "2026-10-15", matchedFields: ["city", "category", "eventFormat", "date", "budget"], differences: [] }],
+    availableDate: "2026-10-15", matchedFields: ["city", "category", "eventFormat", "date", "budget"], differences: [],
+    criteria: [
+      { key: "category", label: "Категория", requested: "Ведущий", offered: "Ведущий", status: "matched" },
+      { key: "eventFormat", label: "Формат события", requested: "корпоратив", offered: "корпоратив, свадьба", status: "matched" },
+      { key: "city", label: "Город", requested: "Алматы", offered: "Алматы", status: "matched" },
+      { key: "date", label: "Дата", requested: "15 октября 2026 г.", offered: "Свободен 15 октября 2026 г.", status: "matched" },
+      { key: "budget", label: "Бюджет", requested: "до 900 000 ₸", offered: "от 300 000 ₸", status: "matched" },
+    ] }],
 };
 
 beforeEach(() => {
@@ -48,6 +55,10 @@ describe("recommender", () => {
     expect(within(results).getByText("Город добавлен при подготовке")).toBeInTheDocument();
     expect(within(results).getByText("Цена добавлена при подготовке")).toBeInTheDocument();
     expect(within(results).getByText("Резервный алгоритм")).toBeInTheDocument();
+    const comparison = within(results).getByRole("table", { name: "Сравнение условий для Тестовый ведущий" });
+    expect(within(comparison).getByText("Ваш запрос")).toBeInTheDocument();
+    expect(within(comparison).getByText("У исполнителя")).toBeInTheDocument();
+    expect(within(comparison).getAllByText("Совпадает")).toHaveLength(5);
   });
 
   it("distinguishes no category from candidates excluded by conditions", async () => {
@@ -78,6 +89,9 @@ describe("recommender", () => {
         alternative: true,
         availableDate: "2026-10-16",
         differences: [{ field: "date", requested: "2026-10-15", offered: "2026-10-16", message: "На 2026-10-15 исполнитель занят, ближайшая свободная дата — 2026-10-16." }],
+        criteria: baseResult.items[0].criteria.map((criterion) => criterion.key === "date"
+          ? { ...criterion, offered: "Свободен 16 октября 2026 г.", status: "different" as const }
+          : criterion),
       }],
     });
     render(<Recommender />);
@@ -86,6 +100,7 @@ describe("recommender", () => {
     expect(screen.getByText("Близкая альтернатива")).toBeInTheDocument();
     expect(screen.getByText("Что отличается от запроса")).toBeInTheDocument();
     expect(screen.getByText(/ближайшая свободная дата/)).toBeInTheDocument();
+    expect(screen.getByText("Есть отличие")).toBeInTheDocument();
   });
 
   it("blocks invalid form values before requesting", async () => {
