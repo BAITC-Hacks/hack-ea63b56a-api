@@ -20,7 +20,7 @@ export type FormValues = z.infer<typeof formSchema>;
 
 export const presets: { id: string; title: string; description: string; values: FormValues }[] = [
   {
-    id: "dense", title: "Корпоратив · ведущий", description: "Алматы · много вариантов",
+    id: "dense", title: "Корпоратив · ведущий", description: "Алматы · 3 точных варианта",
     values: { city: "Алматы", date: "2026-10-15", eventFormat: "корпоратив", category: "Ведущий", budgetKzt: 900000, language: "русский" },
   },
   {
@@ -28,7 +28,19 @@ export const presets: { id: string; title: string; description: string; values: 
     values: { city: "Астана", date: "2026-11-14", eventFormat: "корпоратив", category: "Флорист", budgetKzt: 900000, language: "русский" },
   },
   {
-    id: "empty", title: "Бюджет без совпадений", description: "Алматы · условия отсеют всех",
-    values: { city: "Алматы", date: "2026-10-15", eventFormat: "корпоратив", category: "Ведущий", budgetKzt: 1, language: "русский" },
+    id: "date-alternatives", title: "Корпоратив · новая дата", description: "Алматы · близкие альтернативы",
+    values: { city: "Алматы", date: "2026-12-20", eventFormat: "корпоратив", category: "Ведущий", budgetKzt: 900000, language: "русский" },
+  },
+  {
+    id: "wedding-photo", title: "Свадьба · фотограф", description: "Алматы · съёмка на 6 часов",
+    values: { city: "Алматы", date: "2026-10-15", eventFormat: "свадьба", category: "Фотограф", budgetKzt: 900000, language: "русский", durationHours: 6 },
+  },
+  {
+    id: "toi-host", title: "Той · ведущий", description: "Астана · казахский язык",
+    values: { city: "Астана", date: "2026-10-15", eventFormat: "той", category: "Ведущий", budgetKzt: 1200000, language: "казахский", durationHours: 6 },
+  },
+  {
+    id: "wedding-venue", title: "Свадьба · банкетный зал", description: "Алматы · точный и близкие",
+    values: { city: "Алматы", date: "2026-11-20", eventFormat: "свадьба", category: "Банкетный зал", budgetKzt: 3000000, language: "русский" },
   },
 ];

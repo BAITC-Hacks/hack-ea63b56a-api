@@ -69,7 +69,10 @@ describe("recommender", () => {
     await user.click(await screen.findByRole("button", { name: /Корпоратив · флорист/ }));
     expect(await screen.findByRole("heading", { name: "В городе нет этой категории" })).toBeInTheDocument();
     expect(screen.getByText("В Астане нет категории Инструменталист.")).toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: /Бюджет без совпадений/ }));
+    const budget = screen.getByLabelText("Бюджет, ₸ *");
+    await user.clear(budget);
+    await user.type(budget, "1");
+    await user.click(screen.getByRole("button", { name: "Найти подрядчиков" }));
     expect(await screen.findByRole("heading", { name: "Кандидаты есть, но условия не подошли" })).toBeInTheDocument();
     expect(screen.getByText("На 15 октября все 10 кандидатов исключены условиями.")).toBeInTheDocument();
   });

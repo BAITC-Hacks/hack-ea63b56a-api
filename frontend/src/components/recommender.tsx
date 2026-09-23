@@ -293,7 +293,7 @@ function RecommenderContent() {
       <section aria-label="Примеры запросов" className="py-5">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
           <div className="shrink-0"><p className="text-xs font-extrabold uppercase text-muted-foreground">Быстрый запуск</p><p className="mt-1 text-sm font-semibold">Готовые сценарии</p></div>
-          <div className="grid min-w-0 flex-1 gap-2 sm:grid-cols-3">
+          <div className="grid min-w-0 flex-1 gap-2 sm:grid-cols-2 xl:grid-cols-3">
             {presets.map((preset) => <Button key={preset.id} type="button" variant="outline" disabled={!catalog.data || recommendation.isPending} onClick={() => choosePreset(preset)} aria-pressed={selectedPreset === preset.id} className="h-auto min-h-14 justify-between gap-3 px-4 py-3 text-left aria-pressed:border-primary aria-pressed:bg-accent">
               <span className="min-w-0"><span className="block truncate text-sm font-bold">{preset.title}</span><span className="mt-1 block truncate text-xs font-normal text-muted-foreground">{preset.description}</span></span><ArrowRight className="shrink-0 text-primary" />
             </Button>)}

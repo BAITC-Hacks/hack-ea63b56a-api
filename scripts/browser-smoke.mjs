@@ -17,6 +17,7 @@ try {
     page.on('pageerror', error => errors.push(error.message));
     await page.goto(origin);
     const dense = page.getByRole('button', { name: /Корпоратив · ведущий/ });
+    assert.equal(await page.locator('section[aria-label="Примеры запросов"] button').count(), 6);
     await dense.click();
     await page.getByRole('heading', { name: 'Подходящие подрядчики' }).waitFor();
     const results = page.locator('section[aria-labelledby="results-title"]');
@@ -46,9 +47,11 @@ try {
     await page.getByRole('button', { name: 'Найти подрядчиков' }).click();
     await page.getByRole('heading', { name: 'В городе нет этой категории' }).waitFor();
 
-    await page.getByRole('button', { name: /Бюджет без совпадений/ }).click();
+    await dense.click();
+    await page.getByLabel('Бюджет, ₸ *').fill('1');
+    await page.getByRole('button', { name: 'Найти подрядчиков' }).click();
     await page.getByRole('heading', { name: 'Кандидаты есть, но условия не подошли' }).waitFor();
-    await page.getByLabel('Бюджет,').fill('0');
+    await page.getByLabel('Бюджет, ₸ *').fill('0');
     await page.getByRole('button', { name: 'Найти подрядчиков' }).click();
     await page.getByText('Бюджет должен быть больше нуля', { exact: true }).waitFor();
 

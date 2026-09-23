@@ -1,9 +1,15 @@
 import { describe, expect, it } from "vitest";
-import { formSchema } from "./form";
+import { formSchema, presets } from "./form";
 
 const valid = { city: "Алматы", date: "2026-10-15", eventFormat: "корпоратив", category: "Ведущий", budgetKzt: 900000 };
 
 describe("event request validation", () => {
+  it("provides six valid recommendation scenarios", () => {
+    expect(presets).toHaveLength(6);
+    expect(new Set(presets.map((preset) => preset.id)).size).toBe(6);
+    expect(presets.every((preset) => formSchema.safeParse(preset.values).success)).toBe(true);
+  });
+
   it("accepts required fields and omits optional fields", () => {
     expect(formSchema.safeParse(valid).success).toBe(true);
   });
