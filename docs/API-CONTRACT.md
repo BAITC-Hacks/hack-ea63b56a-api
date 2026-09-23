@@ -111,6 +111,10 @@ formats, amounts, dates and explicit catalog terms without inventing fields.
 - Астана/Инструменталист: population 0 (use for absent category demo).
 - Dense demo: Алматы, 2026-10-15, корпоратив, Ведущий, 900000, русский.
 - Rare demo: Астана, 2026-11-14, корпоратив, Флорист, 900000, русский.
+- Date-alternative demo: Алматы, 2026-12-20, корпоратив, Ведущий, 900000, русский.
+- Wedding photo demo: Алматы, 2026-10-15, свадьба, Фотограф, 900000, русский, 6 часов.
+- Toi host demo: Астана, 2026-10-15, той, Ведущий, 1200000, казахский, 6 часов.
+- Wedding venue demo: Алматы, 2026-11-20, свадьба, Банкетный зал, 3000000, русский.
 - Filtered demo: dense request with budget 1.
 
 ## Ownership

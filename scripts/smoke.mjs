@@ -76,6 +76,15 @@ const winter = await recommend({ ...dense, date: '2026-12-20' }, 'no_candidates_
 assert.equal(winter.exclusions.busy, 8);
 assert.notDeepEqual(winter.items.map(x => x.id), autumn.items.map(x => x.id));
 assert.ok(winter.items.every(item => item.matchType === 'alternative'));
+const weddingPhoto = await recommend({ city: 'Алматы', date: '2026-10-15', eventFormat: 'свадьба',
+  category: 'Фотограф', budgetKzt: 900000, language: 'русский', durationHours: 6 }, 'matched');
+assert.deepEqual([weddingPhoto.exactCount, weddingPhoto.alternativeCount], [3, 0]);
+const toiHost = await recommend({ city: 'Астана', date: '2026-10-15', eventFormat: 'той',
+  category: 'Ведущий', budgetKzt: 1200000, language: 'казахский', durationHours: 6 }, 'matched');
+assert.deepEqual([toiHost.exactCount, toiHost.alternativeCount], [2, 1]);
+const weddingVenue = await recommend({ city: 'Алматы', date: '2026-11-20', eventFormat: 'свадьба',
+  category: 'Банкетный зал', budgetKzt: 3000000, language: 'русский' }, 'matched');
+assert.deepEqual([weddingVenue.exactCount, weddingVenue.alternativeCount], [1, 2]);
 const badDate = await fetch(`${base}/recommendations`, { method: 'POST', headers: { 'content-type': 'application/json' },
   body: JSON.stringify({ ...dense, date: '2026-02-30' }) });
 assert.equal(badDate.status, 400);
