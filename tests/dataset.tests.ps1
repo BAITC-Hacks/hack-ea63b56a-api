@@ -12,6 +12,17 @@ function Assert-True([bool]$Condition, [string]$Message) {
 }
 
 $tests = [ordered]@{
+    'Matching fields contain no empty pipe-separated values' = {
+        Assert-True ($rows.Count -gt 0) 'Dataset is empty'
+        foreach ($row in $rows) {
+            foreach ($field in @('categories', 'event_formats', 'languages')) {
+                Assert-True (-not [string]::IsNullOrWhiteSpace($row.$field)) "Empty $field for $($row.id)"
+                foreach ($value in $row.$field.Split('|')) {
+                    Assert-True (-not [string]::IsNullOrWhiteSpace($value)) "Empty item in $field for $($row.id): '$($row.$field)'"
+                }
+            }
+        }
+    }
     'Prices are nonnegative numbers and optional hour limits are positive' = {
         Assert-True ($rows.Count -gt 0) 'Dataset is empty'
         foreach ($row in $rows) {
