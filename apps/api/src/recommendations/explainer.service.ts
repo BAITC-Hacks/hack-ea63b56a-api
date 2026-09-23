@@ -16,7 +16,7 @@ export class ExplainerService {
         : `может работать необходимые ${request.durationHours} ч.`
       : null;
     const language = request.language
-      ? `работает на ${request.language.toLowerCase()} языке`
+      ? `языки работы: ${request.language.split('|').join(', ')}`
       : item.languages.length > 1
         ? `работает на языках: ${item.languages.join(', ')}`
         : null;

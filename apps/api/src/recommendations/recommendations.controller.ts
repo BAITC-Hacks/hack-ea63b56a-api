@@ -8,27 +8,29 @@ import {
 } from './dto/recommendation-response.dto';
 import { RecommenderService } from './recommender.service';
 import { RequestParserService } from './request-parser.service';
+import { OpenAiService } from './openai.service';
 
 @Controller('recommendations')
 export class RecommendationsController {
   constructor(
     private readonly recommender: RecommenderService,
     private readonly parser: RequestParserService,
-    private readonly loader: CsvLoaderService
+    private readonly loader: CsvLoaderService,
+    private readonly openAi: OpenAiService
   ) {}
 
   @Get('metadata')
   getMetadata(): MetadataResponseDto {
-    return this.loader.getMetadata();
+    return { ...this.loader.getMetadata(), ai: this.openAi.getStatus() };
   }
 
   @Post('parse')
-  parse(@Body() request: ParseRequestDto): ParsedRequestResponseDto {
+  async parse(@Body() request: ParseRequestDto): Promise<ParsedRequestResponseDto> {
     return this.parser.parse(request.text);
   }
 
   @Post()
-  recommend(@Body() request: RecommendationRequestDto): RecommendationResponseDto {
+  async recommend(@Body() request: RecommendationRequestDto): Promise<RecommendationResponseDto> {
     return this.recommender.recommend(request);
   }
 }

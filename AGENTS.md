@@ -10,7 +10,7 @@ plugins, ChatGPT, Codex или их документацией.
 ## Источники
 
 - ТЗ: `HackAlem AI_ Хакатон-задача_ умный подбор подрядчиков.docx`
-- Данные: `hackathon dataset anonymized.csv`
+- Данные: `data/contractors.csv`
 - Preview: `hackathon dataset preview.html`
 
 ## Стек
@@ -19,7 +19,8 @@ plugins, ChatGPT, Codex или их документацией.
 - TypeScript/NestJS API в `apps/api`;
 - Next.js App Router UI в `apps/web`;
 - CSV-каталог в `data/contractors.csv`;
-- детерминированный fallback без внешнего AI API.
+- OpenAI Responses API для разбора текста и объяснений;
+- детерминированный fallback при отсутствии `OPENAI_API_KEY` или ошибке API.
 
 Проверено локально 2026-09-23:
 
@@ -66,5 +67,5 @@ npm run build
 
 ## Дальше
 
-Следующий конкретный шаг: провести ручной UX-прогон четырёх демо-сценариев, затем при необходимости
-подключить LLM только для разбора свободного текста и semantic reranking, сохранив локальный fallback.
+Следующий конкретный шаг: добавить локальный `OPENAI_API_KEY`, провести ручной UX-прогон четырёх
+демо-сценариев и подтвердить в интерфейсе метку фактического использования OpenAI.

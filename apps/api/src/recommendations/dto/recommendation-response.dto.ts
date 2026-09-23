@@ -31,9 +31,17 @@ export class FilterSummaryDto {
 }
 
 export class SuggestionDto {
-  type!: 'budget' | 'duration' | 'language';
+  type!: 'budget' | 'duration' | 'language' | 'date';
+  candidateCount!: number;
   label!: string;
   value!: number | string;
+}
+
+export class AiUsageDto {
+  enabled!: boolean;
+  used!: boolean;
+  model!: string;
+  feature!: 'request_parser' | 'recommendation_explainer';
 }
 
 export class RecommendationResponseDto {
@@ -44,6 +52,7 @@ export class RecommendationResponseDto {
   excluded!: ExcludedItemDto[];
   filterSummary!: FilterSummaryDto[];
   suggestions!: SuggestionDto[];
+  ai!: AiUsageDto;
 }
 
 export class MetadataResponseDto {
@@ -51,6 +60,7 @@ export class MetadataResponseDto {
   categories!: string[];
   eventTypes!: string[];
   languages!: string[];
+  ai!: { enabled: boolean; model: string };
 }
 
 export class ParsedRequestResponseDto {
@@ -66,4 +76,6 @@ export class ParsedRequestResponseDto {
   }>;
   missing!: string[];
   question!: string | null;
+  source!: 'openai' | 'fallback';
+  model!: string;
 }
